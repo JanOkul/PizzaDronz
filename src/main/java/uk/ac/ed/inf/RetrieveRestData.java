@@ -9,7 +9,7 @@ import java.net.URL;
 import java.time.LocalDate;
 
 
-public class RetrieveOrders {
+public class RetrieveRestData {
 
     /**
      * Retrieves a list of the pizza orders for a particular date.
