@@ -18,7 +18,7 @@ public class RetrieveRestData {
      * @param date The date of the orders to retrieve
      * @return An array of Orders, if an error occurs, then an empty array is returned.
      */
-    public static Order[] retrieveOrders(String api_url, LocalDate date) {
+    public Order[] retrieveOrders(String api_url, LocalDate date) {
         String ORDER_URL = "orders/" + date;
         String IS_ALIVE_URL = "isAlive";
         Order[] orders;
@@ -60,7 +60,7 @@ public class RetrieveRestData {
      * @param api_url The URL of the Rest API.
      * @return An array of Restaurant, if an error occurs, then an empty array is returned.
      */
-    public static Restaurant[] retrieveRestaurants(String api_url) {
+    public Restaurant[] retrieveRestaurants(String api_url) {
         String RESTAURANT_URL = "restaurants";
         String IS_ALIVE_URL = "isAlive";
         Restaurant[] restaurants;
@@ -102,7 +102,7 @@ public class RetrieveRestData {
      * @param api_url The URL of the Rest API.
      * @return An array of NamedRegion, if an error occurs, then an empty array is returned.
      */
-    public static NamedRegion[] retrieveNoFlyZones(String api_url) {
+    public NamedRegion[] retrieveNoFlyZones(String api_url) {
         String NOFLYZONE_URL = "noFlyZones";
         String IS_ALIVE_URL = "isAlive";
         NamedRegion[] no_fly_zones;
@@ -144,7 +144,7 @@ public class RetrieveRestData {
          * @param api_url The URL of the Rest API.
          * @return A NamedRegion, if an error occurs, then null is returned.
          */
-        public static NamedRegion retrieveCentralArea(String api_url) {
+        public NamedRegion retrieveCentralArea(String api_url) {
             String CentralArea_URL = "centralArea";
             String IS_ALIVE_URL = "isAlive";
             NamedRegion central_area_zones;

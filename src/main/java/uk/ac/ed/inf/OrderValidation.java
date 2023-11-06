@@ -133,10 +133,12 @@ public class OrderValidation implements uk.ac.ed.inf.ilp.interfaces.OrderValidat
         // ---------- Checks if card is not expired ----------
         String[] expiry_date_string = credit_card_information.getCreditCardExpiry().split("/");
 
-        int month_of_expiry = Integer.parseInt(expiry_date_string[1])+2000;
-        int year_of_expiry = Integer.parseInt(expiry_date_string[0]);
+        int month_of_expiry = Integer.parseInt(expiry_date_string[0]);
+        int year_of_expiry = Integer.parseInt(expiry_date_string[1])+2000;
         // Converts integers into LocalDate of the last day of expiry month.
+
         LocalDate expiry_date = YearMonth.of(year_of_expiry, month_of_expiry).atEndOfMonth();
+
         LocalDate current_date = LocalDate.now();
 
         // Checks if card expiry date is before the current date (expired).
