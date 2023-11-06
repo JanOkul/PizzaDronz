@@ -45,8 +45,8 @@ public class LngLatHandling implements uk.ac.ed.inf.ilp.interfaces.LngLatHandlin
         angle = Math.toRadians(angle);  // Java sin and cos only take radians.
 
         // Calculates new x and y positions.
-        x_2 = x_1 + Math.acos(angle);
-        y_2 = y_1 + Math.asin(angle);
+        x_2 = x_1 + (SystemConstants.DRONE_MOVE_DISTANCE * Math.cos(angle));
+        y_2 = y_1 + (SystemConstants.DRONE_MOVE_DISTANCE * Math.sin(angle));
         return new LngLat(x_2, y_2);
     }
 }

@@ -1,6 +1,8 @@
 package uk.ac.ed.inf;
 
 import uk.ac.ed.inf.ilp.constant.OrderStatus;
+import uk.ac.ed.inf.ilp.data.LngLat;
+import uk.ac.ed.inf.ilp.data.NamedRegion;
 import uk.ac.ed.inf.ilp.data.Order;
 import uk.ac.ed.inf.ilp.data.Restaurant;
 
@@ -31,21 +33,33 @@ public class App {
         // Retrieve data from REST API.
         Order[] orders = RetrieveRestData.retrieveOrders(api_url, date);
         Restaurant[] restaurants = RetrieveRestData.retrieveRestaurants(api_url);
+        NamedRegion[] no_fly_zones = RetrieveRestData.retrieveNoFlyZones(api_url);
+        NamedRegion central_area = RetrieveRestData.retrieveCentralArea(api_url);
 
         OrderValidation validator = new OrderValidation();
         FlightPath flightPath = new FlightPath();
+//         Validate all the orders retrieved.
+//        for (Order order: orders) {
+//            validator.validateOrder(order, restaurants);
+//
+//            if (order.getOrderStatus().equals(OrderStatus.VALID_BUT_NOT_DELIVERED)) {
+//                flightPath.GenerateFlightPath(order, restaurants, no_fly_zones, central_area);
+//            }
+//        }
 
-        // Validate all the orders retrieved.
-        for (Order order: orders) {
-            validator.validateOrder(order, restaurants);
-
-            if (order.getOrderStatus().equals(OrderStatus.VALID_BUT_NOT_DELIVERED)) {
-                flightPath.GenerateFlightPath(order, restaurants);
-            }
+        Order test = validator.validateOrder(orders[0], restaurants);
+        long t1 = System.nanoTime();
+        LngLat[] test2 = flightPath.GenerateFlightPath(test, restaurants, no_fly_zones, central_area);
+        long t2 = System.nanoTime();
+        System.out.println((t2-t1)/1_000_000);
+        for (LngLat l: test2) {
+            System.out.print(l.lng());
+            System.out.print(" ");
+            System.out.print(l.lat());
+            System.out.print("\n");
         }
+        System.out.println( new LngLatHandling().isCloseTo(new LngLat((-3.1912869215011597), 55.945535152517735), new LngLat ((-3.191297269045236), 55.945461710882974 )));
 
 
-        System.out.println(orders.length);
-        System.out.println(restaurants.length);
     }
 }
