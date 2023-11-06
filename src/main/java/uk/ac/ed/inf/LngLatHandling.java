@@ -26,16 +26,23 @@ public class LngLatHandling implements uk.ac.ed.inf.ilp.interfaces.LngLatHandlin
 
     public boolean isInRegion(LngLat position, NamedRegion region) {
         LngLat[] points = region.vertices();
-        // Using a path object as it has a contains method which will tell if drone is in region (the path).
-        Path2D.Double polygon = new Path2D.Double();
+        int num_points = points.length;
 
-        polygon.moveTo(points[0].lng(), points[0].lat());   // Start path from first point in list.
-        // Draw a line from previous point to current point.
-        for (int point_index = 1; point_index < points.length; point_index++) {
-            polygon.lineTo(points[point_index].lng(), points[point_index].lat());
+        boolean in_region = false;
+
+        for (int i = 0, j = num_points - 1; i < num_points; j = i++) {
+            double xi = points[i].lng();
+            double yi = points[i].lat();
+            double xj = points[j].lng();
+            double yj = points[j].lat();
+
+            if (((yi > position.lat()) != (yj > position.lat())) &&
+                    (position.lng() < (xj - xi) * (position.lat() - yi) / (yj - yi) + xi)) {
+                in_region = !in_region;
+            }
         }
-        polygon.closePath();    // Draws final line back to original point.
-        return polygon.contains(position.lng(), position.lat());
+
+        return in_region;
     }
 
     public LngLat nextPosition(LngLat startPosition, double angle) {

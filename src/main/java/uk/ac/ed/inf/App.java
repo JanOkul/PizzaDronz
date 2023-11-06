@@ -2,7 +2,6 @@ package uk.ac.ed.inf;
 
 import uk.ac.ed.inf.ilp.constant.OrderStatus;
 import uk.ac.ed.inf.ilp.constant.OrderValidationCode;
-import uk.ac.ed.inf.ilp.data.LngLat;
 import uk.ac.ed.inf.ilp.data.NamedRegion;
 import uk.ac.ed.inf.ilp.data.Order;
 import uk.ac.ed.inf.ilp.data.Restaurant;
@@ -15,6 +14,7 @@ import java.time.LocalDate;
  */
 public class App {
     public static void main(String[] args) {
+        long t1 = System.nanoTime();
         String api_url;
         LocalDate date;
         Order[] orders;
@@ -54,7 +54,7 @@ public class App {
             validator.validateOrder(order, restaurants);
         }
 
-        long t1 = System.nanoTime();
+
         // Obtain flight path for all orders retrieved.
         for (Order order: orders) {
             order_status_valid = order.getOrderStatus() == OrderStatus.VALID_BUT_NOT_DELIVERED;
@@ -62,10 +62,9 @@ public class App {
 
             // Only get flight path of valid orders
             if (order_status_valid && order_code_valid) {
-                flightPath.GenerateFlightPath(order, restaurants, no_fly_zones, central_area);
-                System.out.println("order done");
+                System.out.println(flightPath.GenerateFlightPath(order, restaurants, no_fly_zones, central_area));
+                System.out.println("");
             }
-            else { System.out.println("error");}
         }
         long t2 = System.nanoTime();
         System.out.println((t2-t1)/1_000_000);
