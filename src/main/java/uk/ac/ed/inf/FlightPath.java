@@ -41,52 +41,37 @@ public class FlightPath {
                     break;
                 }
             }
+        }
             // This should not be possible with order validation class but still here for redundancy.
             if (restaurant_location == null) {
                 System.err.println("No restaurant found");
                 return new LngLat[0];
             }
 
-
-        }
         return AStar(starting_position, restaurant_location, no_fly_zones);
     }
 
     private LngLat[] AStar(LngLat start_position, LngLat end_position, NamedRegion[] no_fly_zones) {
+        Set<LngLat> open_set = new HashSet<>();
+        open_set.add(start_position);
 
-        LngLat current_position = start_position;
-        ArrayList<LngLat> path = new ArrayList<>();
-        ArrayList<LngLat> neighbours = getNeighbours(current_position);
-        LngLat best_position = current_position;
-        double best_heuristic = LLHandle.distanceTo(current_position, end_position);
+        Set<LngLat> came_from = new HashSet<>();
+        ArrayList<LngLat> neighbours = new ArrayList<>(getNeighbours(start_position));
+        HashMap<LngLat, Double> f_score = new HashMap<LngLat, Double>();
 
-        while (!LLHandle.isCloseTo(current_position, end_position)) {
-
-            for (int i = 0; i < neighbours.size(); i++) {
-                LngLat neighbour = neighbours.get(i);
-                double neighbour_heuristic = heuristic(neighbour, end_position, no_fly_zones);
-
-                if (neighbour_heuristic < best_heuristic) {
-                    best_position = neighbour;
-                    best_heuristic = neighbour_heuristic;
-
-                    current_position = best_position;
-                    // Add best move
-                    path.add(best_position);
-
-                    neighbours.clear();
-                    neighbours.addAll(getNeighbours(current_position));
-                }
-
-
-            }
+        for (LngLat neighbour: neighbours) {
+            f_score.put(neighbour, heuristic(neighbour, end_position, no_fly_zones));
         }
-        System.out.println(end_position);
-        return path.toArray(new LngLat[0]);
+
+
+
+        while (!open_set.isEmpty()) {
+
+        }
     }
 
     /** PLEASE REMEMBER TO ACCOUNT FOR NOT BEING ABLE TO LEAVE THE CENTRAL AREA
-     *  Essentially the LngLat distance to function, extended with a check to see if in a no-fly zone.
+     *  The euclidian distance of a potential move to the destination, with a wall being infinity.
      * @param potential_next_position The potential next best move for the drone.
      * @param destination The restaurant location
      * @param regions A list of no-fly zones for the drone to avoid
