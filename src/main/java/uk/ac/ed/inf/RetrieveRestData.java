@@ -12,6 +12,9 @@ import java.time.LocalDate;
 
 public class RetrieveRestData {
 
+    public RetrieveRestData() {
+    }
+
     /**
      * Retrieves a list of the pizza orders for a particular date.
      * @param api_url The URL of the Rest API
@@ -20,8 +23,7 @@ public class RetrieveRestData {
      */
     public Order[] retrieveOrders(String api_url, LocalDate date) {
         String ORDER_URL = "orders/" + date;
-        String IS_ALIVE_URL = "isAlive";
-        Order[] orders;
+        Order[] orders = new Order[0];
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
@@ -31,26 +33,13 @@ public class RetrieveRestData {
             api_url += "/";
         }
 
-        // Check if the REST API is alive.
-        try {
-            URL is_rest_alive = new URL(api_url + IS_ALIVE_URL);
-            boolean alive = mapper.readValue(is_rest_alive , boolean.class);    // Maps JSON boolean to Java boolean.
-
-            // If the REST API says it is not alive then create an error and return nothing.
-            if (!alive) {
-                System.err.println("The REST API is responding but not alive");
-                return new Order[0];
-            }
-        } catch (Exception e) {
-            return new Order[0];
-        }
-
         // Tries to receive orders from REST API.
         try {
             URL orders_url = new URL(api_url + ORDER_URL);
             orders = mapper.readValue(orders_url, Order[].class);   // Maps JSON lines to Object classes.
-        } catch (Exception e) {
-            return new Order[0];
+        }  catch (Exception e) {
+            System.err.println("Failed to obtain orders: " + e);
+            System.exit(1);
         }
         return orders;
     }
@@ -62,8 +51,7 @@ public class RetrieveRestData {
      */
     public Restaurant[] retrieveRestaurants(String api_url) {
         String RESTAURANT_URL = "restaurants";
-        String IS_ALIVE_URL = "isAlive";
-        Restaurant[] restaurants;
+        Restaurant[] restaurants = new Restaurant[0];
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
@@ -73,26 +61,13 @@ public class RetrieveRestData {
             api_url += "/";
         }
 
-        // Check if the REST API is alive.
-        try {
-            URL is_rest_alive = new URL(api_url + IS_ALIVE_URL);
-            boolean alive = mapper.readValue(is_rest_alive , boolean.class);    // Maps JSON boolean to Java boolean.
-
-            // If the REST API says it is not alive then create an error and return nothing.
-            if (!alive) {
-                System.err.println("The REST API is responding but not alive");
-                return new Restaurant[0];
-            }
-        } catch (Exception e) {
-            return new Restaurant[0];
-        }
-
         // Tries to receive restaurants from REST API.
         try {
             URL restaurants_url = new URL(api_url + RESTAURANT_URL);
             restaurants = mapper.readValue(restaurants_url, Restaurant[].class);   // Maps JSON lines to Restaurant classes.
         } catch (Exception e) {
-            return new Restaurant[0];
+            System.err.println("Failed to obtain restaurants: " + e);
+            System.exit(1);
         }
         return restaurants;
     }
@@ -104,8 +79,7 @@ public class RetrieveRestData {
      */
     public NamedRegion[] retrieveNoFlyZones(String api_url) {
         String NOFLYZONE_URL = "noFlyZones";
-        String IS_ALIVE_URL = "isAlive";
-        NamedRegion[] no_fly_zones;
+        NamedRegion[] no_fly_zones = new NamedRegion[0];
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
@@ -115,27 +89,15 @@ public class RetrieveRestData {
             api_url += "/";
         }
 
-        // Check if the REST API is alive.
-        try {
-            URL is_rest_alive = new URL(api_url + IS_ALIVE_URL);
-            boolean alive = mapper.readValue(is_rest_alive, boolean.class);    // Maps JSON boolean to Java boolean.
-
-            // If the REST API says it is not alive then create an error and return nothing.
-            if (!alive) {
-                System.err.println("The REST API is responding but not alive");
-                return new NamedRegion[0];
-            }
-        } catch (Exception e) {
-            return new NamedRegion[0];
-        }
-
         // Tries to receive no-fly zones from REST API.
         try {
             URL noflyzone_url = new URL(api_url + NOFLYZONE_URL);
             no_fly_zones = mapper.readValue(noflyzone_url, NamedRegion[].class);   // Maps JSON lines to NamedRegion classes.
-        } catch (Exception e) {
-            return new NamedRegion[0];
+        }  catch (Exception e) {
+            System.err.println("Failed to obtain no-fly-zones: " + e);
+            System.exit(1);
         }
+
         return no_fly_zones;
     }
 
@@ -146,8 +108,7 @@ public class RetrieveRestData {
          */
         public NamedRegion retrieveCentralArea(String api_url) {
             String CentralArea_URL = "centralArea";
-            String IS_ALIVE_URL = "isAlive";
-            NamedRegion central_area_zones;
+            NamedRegion central_area_zones = null;
 
             ObjectMapper mapper = new ObjectMapper();
             mapper.registerModule(new JavaTimeModule());
@@ -157,27 +118,20 @@ public class RetrieveRestData {
                 api_url += "/";
             }
 
-            // Check if the REST API is alive.
-            try {
-                URL is_rest_alive = new URL(api_url + IS_ALIVE_URL);
-                boolean alive = mapper.readValue(is_rest_alive , boolean.class);    // Maps JSON boolean to Java boolean.
-
-                // If the REST API says it is not alive then create an error and return nothing.
-                if (!alive) {
-                    System.err.println("The REST API is responding but not alive");
-                    return null;
-                }
-            } catch (Exception e) {
-                return null;
-            }
-
             // Tries to receive no-fly zones from REST API.
             try {
                 URL central_area_url = new URL(api_url + CentralArea_URL);
                 central_area_zones = mapper.readValue(central_area_url, NamedRegion.class);   // Maps JSON lines to NamedRegion classes.
             } catch (Exception e) {
-                return null;
+                System.err.println("Failed to obtain central area: " + e);
+                System.exit(1);
             }
+
+            if (central_area_zones == null) {
+                System.err.println("Obtained central area, however central area is null");
+                System.exit(1);
+            }
+
             return central_area_zones;
     }
 }

@@ -6,15 +6,38 @@ import uk.ac.ed.inf.ilp.data.CreditCardInformation;
 import uk.ac.ed.inf.ilp.data.Order;
 import uk.ac.ed.inf.ilp.data.Pizza;
 import uk.ac.ed.inf.ilp.data.Restaurant;
+import uk.ac.ed.inf.ilp.interfaces.OrderValidation;
 
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.*;
 
 import static java.util.Arrays.asList;
 
-public class OrderValidation implements uk.ac.ed.inf.ilp.interfaces.OrderValidation {
+public class OrderValidator implements OrderValidation {
+
+    public OrderValidator() {
+    }
+
+    /**
+     * Validates an order and returns the order with the correct status and validation code.
+     * @param orderToValidate The order to validate.
+     * @param definedRestaurants The restaurants that are currently supported.
+     * @return The order with the correct status and validation code.
+     */
     public Order validateOrder(Order orderToValidate, Restaurant[] definedRestaurants) {
+
+        if (orderToValidate == null) {
+            System.err.println("Order validation: order is null");
+            System.exit(1);
+        }
+
+        if (definedRestaurants == null) {
+            System.err.println("Order validation: defined restaurants is null");
+            System.exit(1);
+        }
+
         // -------------------- PIZZA CHECKS --------------------
         Pizza[] ordered_pizzas = orderToValidate.getPizzasInOrder();
         // ---------- Checks if too many pizzas have been sent ----------
@@ -32,12 +55,21 @@ public class OrderValidation implements uk.ac.ed.inf.ilp.interfaces.OrderValidat
         }
 
         // ---------- Checks for undefined pizzas -----------
+        boolean valid_pizza = false;
+
         for (Pizza pizza: ordered_pizzas) {
-            if (pizza.name().equals("UNDEFINED")) {
-                orderToValidate.setOrderStatus(OrderStatus.INVALID);
-                orderToValidate.setOrderValidationCode(OrderValidationCode.PIZZA_NOT_DEFINED);
-                return orderToValidate;
+            for (Restaurant restaurant: definedRestaurants) {
+                if (asList(restaurant.menu()).contains(pizza)) {
+                    valid_pizza = true;
+                    break;
+                }
             }
+        }
+
+        if (!valid_pizza) {
+            orderToValidate.setOrderStatus(OrderStatus.INVALID);
+            orderToValidate.setOrderValidationCode(OrderValidationCode.PIZZA_NOT_DEFINED);
+            return orderToValidate;
         }
 
         // ---------- Checks if pizza price is accurate ----------
@@ -47,7 +79,7 @@ public class OrderValidation implements uk.ac.ed.inf.ilp.interfaces.OrderValidat
         }
 
         // Checks if pizza price + delivery is the same as the total price.
-        if (pizza_price_sum != (orderToValidate.getPriceTotalInPence()-100)) {
+        if (pizza_price_sum+100 != orderToValidate.getPriceTotalInPence()) {
             orderToValidate.setOrderStatus(OrderStatus.INVALID);
             orderToValidate.setOrderValidationCode(OrderValidationCode.TOTAL_INCORRECT);
             return orderToValidate;
@@ -56,18 +88,13 @@ public class OrderValidation implements uk.ac.ed.inf.ilp.interfaces.OrderValidat
         // ---------- Checks if restaurant is open and if ordered from one restaurant ----------
 
         // Holds the restaurant that the pizzas are ordered from.
-        // Set used to eliminate duplicates of the same restaurant
         Set<Restaurant> restaurant_count = new HashSet<Restaurant>();
-        // Loops through each restaurant.
-        for (Restaurant current_restaurant: definedRestaurants) {
-            // Loops through each pizza in the ordered pizza.
-            for (Pizza current_pizza: ordered_pizzas) {
-                // If pizza is in the current restaurants menu, check if restaurant is closed.
-                // Converted menu to an arrayList so can use the contains method.
-                if (asList(current_restaurant.menu()).contains(current_pizza)) {
 
-                    // Checks if restaurant is open.
-                    // Converted menu to an arrayList so can use the contains method.
+        for (Restaurant current_restaurant: definedRestaurants) {
+            for (Pizza current_pizza: ordered_pizzas) {
+                // Checks if pizza is on the menu of the restaurant.
+                if (asList(current_restaurant.menu()).contains(current_pizza)) {
+                    // Checks if restaurant is open at time of order.
                     if (!asList(current_restaurant.openingDays()).contains(LocalDate.now().getDayOfWeek())) {
                         orderToValidate.setOrderStatus(OrderStatus.INVALID);
                         orderToValidate.setOrderValidationCode(OrderValidationCode.RESTAURANT_CLOSED);
@@ -92,21 +119,19 @@ public class OrderValidation implements uk.ac.ed.inf.ilp.interfaces.OrderValidat
         // -------------------- CREDIT CARD CHECKS ---------------------
         CreditCardInformation credit_card_information = orderToValidate.getCreditCardInformation();
         // ---------- Checks if card number is valid ----------
-        String credit_card_number = credit_card_information.getCreditCardNumber();
+        char[] credit_card_number = credit_card_information.getCreditCardNumber().toCharArray();
         boolean valid_cc_number = true;
 
         // Loop looks for any characters in the card number.
-        for (char card_digit: credit_card_number.toCharArray()) {   // Converts string to char array for a foreach loop
-            // Checks if there is a character in card number.
+        for (char card_digit: credit_card_number) {   // Converts string to char array for a foreach loop
             if (!Character.isDigit(card_digit)) {
                 valid_cc_number = false;
             }
         }
 
         // Checks credit card length.
-        if (credit_card_number.length() != 16) {valid_cc_number = false;}
+        if (credit_card_number.length != 16) {valid_cc_number = false;}
 
-        // Sets order as invalid if credit card number is invalid.
         if (!valid_cc_number) {
             orderToValidate.setOrderStatus(OrderStatus.INVALID);
             orderToValidate.setOrderValidationCode(OrderValidationCode.CARD_NUMBER_INVALID);
@@ -115,6 +140,8 @@ public class OrderValidation implements uk.ac.ed.inf.ilp.interfaces.OrderValidat
 
         // ---------- Checks if cvv valid ----------
         String cvv = credit_card_information.getCvv();
+
+        // Loop looks for any characters in the cvv.
         boolean valid_cvv = true;
         for (char cvv_char: cvv.toCharArray()) {
             if (!Character.isDigit(cvv_char)) {
@@ -132,12 +159,18 @@ public class OrderValidation implements uk.ac.ed.inf.ilp.interfaces.OrderValidat
 
         // ---------- Checks if card is not expired ----------
         String[] expiry_date_string = credit_card_information.getCreditCardExpiry().split("/");
-
+        LocalDate expiry_date;
         int month_of_expiry = Integer.parseInt(expiry_date_string[0]);
         int year_of_expiry = Integer.parseInt(expiry_date_string[1])+2000;
         // Converts integers into LocalDate of the last day of expiry month.
 
-        LocalDate expiry_date = YearMonth.of(year_of_expiry, month_of_expiry).atEndOfMonth();
+        try {
+            expiry_date = YearMonth.of(year_of_expiry, month_of_expiry).atEndOfMonth();
+        } catch (DateTimeException e) {
+            orderToValidate.setOrderStatus(OrderStatus.INVALID);
+            orderToValidate.setOrderValidationCode(OrderValidationCode.EXPIRY_DATE_INVALID);
+            return orderToValidate;
+        }
 
         LocalDate current_date = LocalDate.now();
 

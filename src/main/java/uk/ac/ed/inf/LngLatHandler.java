@@ -3,11 +3,19 @@ package uk.ac.ed.inf;
 import uk.ac.ed.inf.ilp.data.LngLat;
 import uk.ac.ed.inf.ilp.data.NamedRegion;
 import uk.ac.ed.inf.ilp.constant.*;
+import uk.ac.ed.inf.ilp.interfaces.LngLatHandling;
 
-import java.awt.geom.Path2D;
+public class LngLatHandler implements LngLatHandling {
 
-public class LngLatHandling implements uk.ac.ed.inf.ilp.interfaces.LngLatHandling {
+    public LngLatHandler() {
+    }
 
+    /**
+     * Calculates the distance between two points.
+     * @param startPosition The starting position as longitude and latitude.
+     * @param endPosition   The ending position as longitude and latitude.
+     * @return The distance between the two points in degrees.
+     */
     public double distanceTo(LngLat startPosition, LngLat endPosition) {
         double x_1, x_2, y_1, y_2, distance;
         x_1 = startPosition.lng();
@@ -19,11 +27,23 @@ public class LngLatHandling implements uk.ac.ed.inf.ilp.interfaces.LngLatHandlin
         return distance;
     }
 
+    /**
+     * Checks if two points are close to each other.
+     * @param startPosition The starting position as longitude and latitude.
+     * @param otherPosition The ending position as longitude and latitude.
+     * @return True if the two points are close to each other, false otherwise.
+     */
     public boolean isCloseTo(LngLat startPosition, LngLat otherPosition) {
         double tolerance = SystemConstants.DRONE_IS_CLOSE_DISTANCE ;
-        return distanceTo(startPosition, otherPosition) < tolerance;    // If distance is strictly less than tolerance then close.
+        return distanceTo(startPosition, otherPosition) < tolerance;
     }
 
+    /**
+     * Checks if a point is in a region by using ray casting.
+     * @param position The position to check.
+     * @param region The region to check.
+     * @return True if the point is in the region, false otherwise.
+     */
     public boolean isInRegion(LngLat position, NamedRegion region) {
         LngLat[] points = region.vertices();
         int num_points = points.length;
@@ -36,15 +56,20 @@ public class LngLatHandling implements uk.ac.ed.inf.ilp.interfaces.LngLatHandlin
             double xj = points[j].lng();
             double yj = points[j].lat();
 
-            if (((yi > position.lat()) != (yj > position.lat())) &&
-                    (position.lng() < (xj - xi) * (position.lat() - yi) / (yj - yi) + xi)) {
+            // Checks if the point is between two vertices.
+            if (((yi > position.lat()) != (yj > position.lat())) && (position.lng() < (xj - xi) * (position.lat() - yi) / (yj - yi) + xi)) {
                 in_region = !in_region;
             }
         }
-
         return in_region;
     }
 
+    /**
+     * Calculates the next position given a starting position and an angle.
+     * @param startPosition The starting position as longitude and latitude.
+     * @param angle The angle to move in.
+     * @return The next position as longitude and latitude.
+     */
     public LngLat nextPosition(LngLat startPosition, double angle) {
         double x_1, y_1, x_2, y_2;
         x_1 = startPosition.lng();
