@@ -7,6 +7,7 @@ import uk.ac.ed.inf.ilp.data.Order;
 import uk.ac.ed.inf.ilp.data.Restaurant;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 
 /**
  * Hello world!
@@ -34,13 +35,14 @@ public class App {
         LocalDate date = LocalDate.parse(args[1]);
 
         // Retrieve data from REST API
-        Order[] orders              = retrieve_data.retrieveOrders(api_url, date);
-        Restaurant[] restaurants    = retrieve_data.retrieveRestaurants(api_url);
-        NamedRegion[] no_fly_zones  = retrieve_data.retrieveNoFlyZones(api_url);
-        NamedRegion central_area    = retrieve_data.retrieveCentralArea(api_url);
-
+        Order[] orders             = retrieve_data.retrieveData(api_url, "orders/" + date,  Order.class);
+        Restaurant[] restaurants   = retrieve_data.retrieveData(api_url, "restaurants",  Restaurant.class);
+        NamedRegion[] no_fly_zones = retrieve_data.retrieveData(api_url, "noFlyZones",  NamedRegion.class);
+        NamedRegion central_area   = retrieve_data.retrieveCentralArea(api_url, "centralArea");
+        System.out.println(central_area);
         // Validate all the orders retrieved
         for (Order order : orders) {
+            System.out.println(order.getOrderNo());
             validator.validateOrder(order, restaurants);
         }
 
@@ -51,7 +53,7 @@ public class App {
 
             // Only get flight path of valid orders
             if (order_status_valid && order_code_valid) {
-                System.out.println(flightPathHandler.GenerateFlightPath(order, restaurants, no_fly_zones, central_area));
+                System.out.println(Arrays.toString(flightPathHandler.GenerateFlightPath(order, restaurants, no_fly_zones, central_area)));
                 System.out.println();
             }
         }

@@ -10,16 +10,14 @@ public class FlightPath {
     private final double angle;
     private final double toLongitude;
     private final double toLatitude;
-    private final int ticksSinceStartOfCalculation;
 
-    public FlightPath(String orderNo, LngLat from, double angle, LngLat to, int ticksSinceStartOfCalculation) {
+    public FlightPath(String orderNo, LngLat from, double angle, LngLat to) {
         this.orderNo = orderNo;
         this.fromLongitude = from.lng();
         this.fromLatitude = from.lat();
         this.angle = angle;
         this.toLongitude = to.lng();
         this.toLatitude = to.lat();
-        this.ticksSinceStartOfCalculation = ticksSinceStartOfCalculation;
     }
 
     @JsonProperty
@@ -52,8 +50,4 @@ public class FlightPath {
         return toLatitude;
     }
 
-    @JsonProperty
-    public int getTicksSinceStartOfCalculation() {
-        return ticksSinceStartOfCalculation;
-    }
 }

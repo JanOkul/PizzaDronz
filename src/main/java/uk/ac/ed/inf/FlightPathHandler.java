@@ -43,15 +43,15 @@ public class FlightPathHandler {
         }
 
         // Generate path to restaurant
-        ArrayList<FlightPath> path = AStar(starting_position, restaurant_location, no_fly_zones);
+        ArrayList<LngLat> path = AStar(starting_position, restaurant_location, no_fly_zones);
 
         // todo : Modify code to fit json spec, correctly create a set of flight path classes.
         // As the return journey is the reverse of the journey to the restaurant, reverse the path.
-//        ArrayList<LngLat> reversed_path = new ArrayList<LngLat>(path);
-//        Collections.reverse(reversed_path);
-//        path.add(new LngLat(999,999)); // Hover move to indicate arrival at restaurant.
-//        path.addAll(reversed_path);
-//        path.add(new LngLat(999,999)); // Hover move to indicate arrival to appleton.
+        ArrayList<LngLat> reversed_path = path;
+        Collections.reverse(reversed_path);
+        path.add(new LngLat(999,999)); // Hover move to indicate arrival at restaurant.
+        path.addAll(reversed_path);
+        path.add(new LngLat(999,999)); // Hover move to indicate arrival to appleton.
 
         return path.toArray(new LngLat[0]);
     }
@@ -65,7 +65,7 @@ public class FlightPathHandler {
      * @param no_fly_zones   A list of zones the drone cannot fly in.
      * @return A list of positions the drone must move to.
      */
-    private ArrayList<FlightPath> AStar(LngLat start_position, LngLat end_position, NamedRegion[] no_fly_zones) {
+    private ArrayList<LngLat> AStar(LngLat start_position, LngLat end_position, NamedRegion[] no_fly_zones) {
         HashMap<LngLat, LngLat> came_from = new HashMap<>();    // Path of Drone.
         HashMap<LngLat, Double> g_score   = new HashMap<>();    // Cost of getting to a position.
         PriorityQueue<LngLat> open_set;                         // Positions in queue to be evaluated.
@@ -156,10 +156,10 @@ public class FlightPathHandler {
      * @param current The current position.
      * @return The path from the start to the end.
      */
-    private ArrayList<FlightPath> reconstructPath(Map<LngLat, LngLat> parent, LngLat current) {
-        ArrayList<FlightPath> path = new ArrayList<>();
+    private ArrayList<LngLat> reconstructPath(Map<LngLat, LngLat> parent, LngLat current) {
+        ArrayList<LngLat> path = new ArrayList<>();
         while (parent.containsKey(current)) {
-            path.add(null); // todo: add flight path
+            path.add(current);
             current = parent.get(current);
         }
         Collections.reverse(path);
