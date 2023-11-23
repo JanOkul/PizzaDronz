@@ -45,14 +45,13 @@ public class App {
         NamedRegion[] no_fly_zones = retrieve_data.retrieveData(api_url, "noFlyZones",  NamedRegion.class);
         NamedRegion central_area   = retrieve_data.retrieveCentralArea(api_url, "centralArea");
 
-        ArrayList<FlightPath> flightPaths = new ArrayList<FlightPath>();
+        ArrayList<FlightPath> flightPaths = new ArrayList<>();
 
         // Validate all the orders retrieved
         for (Order order : orders) {
 
             validator.validateOrder(order, restaurants);
-//            System.out.print(order.getOrderNo());
-//            System.out.println(order.getOrderStatus());
+
         }
 
         // Obtain flight path for all orders retrieved
@@ -62,7 +61,13 @@ public class App {
 
             // Only get flight path of valid orders
             if (order_status_valid && order_code_valid) {
-                flightPaths.addAll(Arrays.stream(flightPathHandler.GenerateFlightPath(order, restaurants, no_fly_zones, central_area)).toList());
+                FlightPath[] flightPath = flightPathHandler.GenerateFlightPath(order, restaurants, no_fly_zones, central_area);
+                if (flightPath == null) {
+                    System.err.println("No flight path found for order, continuing with other orders " + order.getOrderNo());
+                    continue;
+                }
+
+                flightPaths.addAll(Arrays.stream(flightPath).toList());
             }
         }
 

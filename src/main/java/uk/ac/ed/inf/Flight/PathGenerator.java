@@ -11,13 +11,14 @@ import java.util.HashSet;
 import java.util.PriorityQueue;
 
 /**
- *  Location class helps with A* algorithm as it removes the need for multiple hashmaps.
+ *  An extension of the LngLat class, with additional information to be used in the A* algorithm.
+ *  Replaces the need for HashMaps within the path generator
  */
 class Location{
     private final LngLat position;
-    private Location cameFrom;
-    private double gScore;
-    private double hScore;
+    private final Location cameFrom;
+    private final double gScore;
+    private final double hScore;
     private final double angle;     // The angle from the previous position to this position.
 
     Location(LngLat position, Location cameFrom, double gScore, double hScore, double angle){
@@ -27,17 +28,9 @@ class Location{
         this.hScore = hScore;
         this.angle = angle;
     }
-
+    // Getters
     LngLat getPosition(){return this.position;}
-
-    void setHScore(double hScore){this.hScore = hScore;}
-
     Location getCameFrom(){return this.cameFrom;}
-    void setCameFrom(Location cameFrom){this.cameFrom = cameFrom;}
-
-    double getGScore(){return this.gScore;}
-    void setGScore(double gScore){this.gScore = gScore;}
-
     double getFScore(){return this.gScore + this.hScore;}
     double getAngle(){return this.angle;}
 }
@@ -57,46 +50,49 @@ public class PathGenerator {
         leftCentralRegion = false;
     }
 
-    protected ArrayList<Double> createFlightPath(LngLat startPosition, LngLat endPosition, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
-
+    /**
+     * Using the A* algorithm, finds the angles the drone needs to move in.
+     * @param startPosition The starting position of the drone.
+     * @param endPosition Destination of the drone.
+     * @param noFlyZones Areas the drone cannot enter.
+     * @param centralRegion The central region.
+     * @return A list of angles that will be converted into a flight path later on.
+     */
+    protected ArrayList<Double> createFlightAngles(LngLat startPosition, LngLat endPosition, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
+        // Comparator will set the priority of the locations based on their fScore.
         PriorityQueue<Location> openSet = new PriorityQueue<>(Comparator.comparingDouble(Location::getFScore));
         HashSet<Location> closedSet = new HashSet<>();
 
         // Add the start position to the open set.
-        openSet.add(new Location(startPosition, null,0, hScore(startPosition, endPosition), Double.NaN));
+        Location startingLocation = new Location(startPosition, null, 0.0, hScore(startPosition, endPosition), Double.NaN);
+        openSet.add(startingLocation);
 
         while (!openSet.isEmpty()) {
-            Location current = openSet.poll();
-            System.out.println(lngLatHandler.isCloseTo(current.getPosition(), endPosition));
-            checkIfLeftCentralRegion(current.getPosition(), centralRegion);
+            Location currentLocation = openSet.poll();
+            checkIfLeftCentralRegion(currentLocation.getPosition(), centralRegion);
 
-            // Goal check
-            if (lngLatHandler.isCloseTo(current.getPosition(), endPosition)) {
-                System.out.println("hi");
-                return reconstructPath(current);
+            // If the current location is the end position, return the path.
+            if (lngLatHandler.isCloseTo(currentLocation.getPosition(), endPosition)) {
+                return reconstructPath(currentLocation);
             }
 
-            closedSet.add(current);
-            // Iterate over neighbors
-            for (Location neighbor : getNeighbours(current, endPosition, noFlyZones, centralRegion)) {
-                if (closedSet.contains(neighbor)) continue;
+            // Add the current location to the closed set.
+            closedSet.add(currentLocation);
 
-                double tentativeGScore = current.getGScore() + lngLatHandler.distanceTo(current.getPosition(), neighbor.getPosition());
+            // Get the neighbours of the current location.
+            Location[] neighbours = getNeighbours(currentLocation, endPosition, noFlyZones, centralRegion);
 
-                if (tentativeGScore < neighbor.getGScore()) {
-                    neighbor.setCameFrom(current);
-                    neighbor.setGScore(tentativeGScore);
-                    neighbor.setHScore(hScore(neighbor.getPosition(), endPosition));
-
-                    if (!openSet.contains(neighbor)) {
-                        openSet.add(neighbor);
-                    }
+            for (Location neighbour : neighbours) {
+                // If the neighbour is in the closed set, skip it.
+                if (closedSet.contains(neighbour)) {
+                    continue;
+                }
+                // If the neighbour is not in the open set, add it.
+                if (!openSet.contains(neighbour)) {
+                    openSet.add(neighbour);
                 }
             }
         }
-
-
-
         return new ArrayList<>();
     }
 
@@ -108,26 +104,28 @@ public class PathGenerator {
     private ArrayList<Double> reconstructPath(Location current) {
         ArrayList<Double> path = new ArrayList<>();
 
+        // The starting node is always null, so stop when reached the start node.
         while (current.getCameFrom() != null) {
             double angle = current.getAngle();
-            System.out.println(angle);
-            // Skips over the start angle, as the start position cannot have a previous angle.
-            if (Double.isNaN(angle)) {
-                continue;
-            } else {
-
-                path.add(angle);
-            }
+            path.add(angle);
             current = current.getCameFrom();
         }
-
         return path;
     }
 
+    /**
+     * Calculates the 16 neighbours of a location.
+     * @param currentLocation The current location of the drone.
+     * @param endPosition  The end position of the drone.
+     * @param noFlyZones The areas the drone cannot enter.
+     * @param centralRegion The central region.
+     * @return An array of the 16 neighbours.
+     */
     private Location[] getNeighbours(Location currentLocation, LngLat endPosition, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
         LngLat currentPosition = currentLocation.getPosition();
-
         Location[] neighbours = new Location[16];
+
+        // For each compass direction.
         for (int i = 0; i < 16; i++) {
             double angle = DIRECTIONS[i];
             LngLat nextPosition = lngLatHandler.nextPosition(currentPosition, angle);
@@ -165,13 +163,13 @@ public class PathGenerator {
                 return Double.POSITIVE_INFINITY;
             }
         }
-
         // Stops the drone from leaving the central region, if the drone has left and returned to the central region.
         if (lngLatHandler.isInRegion(position, centralRegion) && !lngLatHandler.isInRegion(nextPosition, centralRegion) && leftCentralRegion) {
             return Double.POSITIVE_INFINITY;
         }
-
-        else return SystemConstants.DRONE_MOVE_DISTANCE;
+        else {
+            return SystemConstants.DRONE_MOVE_DISTANCE;    // LngLatHandler.distanceTo would be equivalent, so this can be called for efficiency.
+        }
     }
 
     /**
@@ -184,6 +182,4 @@ public class PathGenerator {
             leftCentralRegion = true;
         }
     }
-
-
 }
