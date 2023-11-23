@@ -17,13 +17,13 @@ public class LngLatHandler implements LngLatHandling {
      * @return The distance between the two points in degrees.
      */
     public double distanceTo(LngLat startPosition, LngLat endPosition) {
-        double x_1, x_2, y_1, y_2, distance;
-        x_1 = startPosition.lng();
-        y_1 = startPosition.lat();
-        x_2 = endPosition.lng();
-        y_2 = endPosition.lat();
+        double x1, x2, y1, y2, distance;
+        x1 = startPosition.lng();
+        y1 = startPosition.lat();
+        x2 = endPosition.lng();
+        y2 = endPosition.lat();
         // Distance Formula
-        distance = Math.sqrt(Math.pow(x_2-x_1, 2) + Math.pow(y_2-y_1, 2));
+        distance = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
         return distance;
     }
 
@@ -46,11 +46,11 @@ public class LngLatHandler implements LngLatHandling {
      */
     public boolean isInRegion(LngLat position, NamedRegion region) {
         LngLat[] points = region.vertices();
-        int num_points = points.length;
+        int noOfPoints = points.length;
 
-        boolean in_region = false;
+        boolean inRegion = false;
 
-        for (int i = 0, j = num_points - 1; i < num_points; j = i++) {
+        for (int i = 0, j = noOfPoints - 1; i < noOfPoints; j = i++) {
             double xi = points[i].lng();
             double yi = points[i].lat();
             double xj = points[j].lng();
@@ -58,10 +58,10 @@ public class LngLatHandler implements LngLatHandling {
 
             // Checks if the point is between two vertices.
             if (((yi > position.lat()) != (yj > position.lat())) && (position.lng() < (xj - xi) * (position.lat() - yi) / (yj - yi) + xi)) {
-                in_region = !in_region;
+                inRegion = !inRegion;
             }
         }
-        return in_region;
+        return inRegion;
     }
 
     /**
@@ -71,14 +71,14 @@ public class LngLatHandler implements LngLatHandling {
      * @return The next position as longitude and latitude.
      */
     public LngLat nextPosition(LngLat startPosition, double angle) {
-        double x_1, y_1, x_2, y_2;
-        x_1 = startPosition.lng();
-        y_1 = startPosition.lat();
+        double x1, x2, y1, y2;
+        x1 = startPosition.lng();
+        y1 = startPosition.lat();
         angle = Math.toRadians(angle);  // Java sin and cos only take radians.
 
         // Calculates new x and y positions.
-        x_2 = x_1 + (SystemConstants.DRONE_MOVE_DISTANCE * Math.cos(angle));
-        y_2 = y_1 + (SystemConstants.DRONE_MOVE_DISTANCE * Math.sin(angle));
-        return new LngLat(x_2, y_2);
+        x2 = x1 + (SystemConstants.DRONE_MOVE_DISTANCE * Math.cos(angle));
+        y2 = y1 + (SystemConstants.DRONE_MOVE_DISTANCE * Math.sin(angle));
+        return new LngLat(x2, y2);
     }
 }

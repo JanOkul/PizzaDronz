@@ -1,4 +1,4 @@
-package uk.ac.ed.inf;
+package uk.ac.ed.inf.OutputClasses;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.ed.inf.ilp.data.LngLat;
