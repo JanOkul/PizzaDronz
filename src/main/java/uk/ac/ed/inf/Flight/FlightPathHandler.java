@@ -14,15 +14,8 @@ public class FlightPathHandler {
     public FlightPathHandler() {
     }
 
-    /**
-     * The public method that finds the flight path for an order.
-     *
-     * @param order          The order to generate a flight path for.
-     * @param restaurants    List of currently supported restaurants.
-     * @param noFlyZones   A list of zones the drone cannot fly in.
-     * @param centralRegion The region of the UoE central area.
-     */
-    public FlightPath[] GenerateFlightPath(Order order, Restaurant[] restaurants, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
+
+    public ArrayList<Double> generateFlightAngles(Order order, Restaurant[] restaurants, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
         // Find restaurant position.
         Pizza targetPizza = order.getPizzasInOrder()[0];   // All pizzas come from the same restaurant.
         LngLat restaurantLocation = null;
@@ -52,44 +45,40 @@ public class FlightPathHandler {
         anglePath.addAll(returnAngles);
         anglePath.add(999.0);
 
-        // Converts angles to FlightPath objects.
-        return convertAngleToFlightPath(order.getOrderNo(), START_POSITION, anglePath);
+        return anglePath;
     }
 
-    /**
-     * Converts the list of angles created by createFlightAngles into a list of flight paths.
-     * @param orderNo The order number.
-     * @param startPosition The starting position of the drone.
-     * @param angles An arraylist of the angles of the moves the drone will take.
-     * @return An array of flight path.
-     */
-    private FlightPath[] convertAngleToFlightPath(String orderNo, LngLat startPosition, ArrayList<Double> angles) {
-        int size = angles.size();
-        FlightPath[] flightPath = new FlightPath[size];
-        LngLat fromLngLat = startPosition;
+    public ArrayList<FlightPath> convertAngleToFlightPath(String orderNo, ArrayList<Double> angles) {
+        ArrayList<FlightPath> flightPath = new ArrayList<>();
+        LngLat fromLngLat = START_POSITION;
         LngLat toLngLat;
 
         // For every angle in the list, calculate the next position and create a flight path object.
-        for (int i = 0; i < size; i++) {
-            double angle = angles.get(i);
+        for (Double angle: angles) {
             // A hover move will not move horizontally, so the next position is the same as the current position.
-            if (angle == 999) {
-                toLngLat = fromLngLat;
-            } else {
-                toLngLat = lngLatHandler.nextPosition(fromLngLat, angle);
-            }
-            flightPath[i] = new FlightPath(orderNo, fromLngLat, angle, toLngLat);
+            toLngLat = angle == 999 ? fromLngLat : lngLatHandler.nextPosition(fromLngLat, angle);
+
+            flightPath.add(new FlightPath(orderNo, fromLngLat, angle, toLngLat));
             fromLngLat = toLngLat;
         }
         return flightPath;
     }
 
-    /**
-     * Reverses the angles created by createFlightAngles, for the return path home. Since angles are flipped
-     * each angle is has 180 added to it.
-     * @param angles An arraylist of the angles of the moves the drone will take.
-     * @return An arraylist of the angles of the moves the drone will take in reverse.
-     */
+    public ArrayList<LngLat> convertAngleToList(ArrayList<Double> angles) {
+        ArrayList<LngLat> flightList = new ArrayList<>();
+        LngLat fromLngLat = START_POSITION;
+        LngLat toLngLat;
+
+        flightList.add(fromLngLat);
+
+        for (Double angle: angles) {
+            toLngLat = angle == 999 ? fromLngLat : lngLatHandler.nextPosition(fromLngLat, angle);
+
+            flightList.add(toLngLat);
+            fromLngLat = toLngLat;
+        }
+        return flightList;
+    }
     private ArrayList<Double> reverseAngles(ArrayList<Double> angles) {
         ArrayList<Double> reversed_angles = new ArrayList<>();
 

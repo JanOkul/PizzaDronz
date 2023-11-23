@@ -6,6 +6,7 @@ import uk.ac.ed.inf.IO.RetrieveRestData;
 import uk.ac.ed.inf.OutputClasses.FlightPath;
 import uk.ac.ed.inf.ilp.constant.OrderStatus;
 import uk.ac.ed.inf.ilp.constant.OrderValidationCode;
+import uk.ac.ed.inf.ilp.data.LngLat;
 import uk.ac.ed.inf.ilp.data.NamedRegion;
 import uk.ac.ed.inf.ilp.data.Order;
 import uk.ac.ed.inf.ilp.data.Restaurant;
@@ -13,6 +14,8 @@ import uk.ac.ed.inf.ilp.data.Restaurant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * Hello world!
@@ -45,30 +48,29 @@ public class App {
         NamedRegion[] no_fly_zones = retrieve_data.retrieveData(api_url, "noFlyZones",  NamedRegion.class);
         NamedRegion central_area   = retrieve_data.retrieveCentralArea(api_url, "centralArea");
 
+        // Holds the flight data for json and geo-json.
         ArrayList<FlightPath> flightPaths = new ArrayList<>();
+        ArrayList<LngLat> flightLngLat = new ArrayList<>();
 
-        // Validate all the orders retrieved
+        // Main loop of operation for each order.
         for (Order order : orders) {
-
+            // Validate the order
             validator.validateOrder(order, restaurants);
 
-        }
-
-        // Obtain flight path for all orders retrieved
-        for (Order order : orders) {
             boolean order_status_valid = order.getOrderStatus() == OrderStatus.VALID_BUT_NOT_DELIVERED;
             boolean order_code_valid = order.getOrderValidationCode() == OrderValidationCode.NO_ERROR;
 
             // Only get flight path of valid orders
             if (order_status_valid && order_code_valid) {
-                FlightPath[] flightPath = flightPathHandler.GenerateFlightPath(order, restaurants, no_fly_zones, central_area);
-                if (flightPath == null) {
-                    System.err.println("No flight path found for order, continuing with other orders " + order.getOrderNo());
+                ArrayList<Double> angles = flightPathHandler.generateFlightAngles(order, restaurants, no_fly_zones, central_area);
+                if (angles == null) {
                     continue;
                 }
-
-                flightPaths.addAll(Arrays.stream(flightPath).toList());
+                // Adds data into arraylists for their output type.
+                flightPaths.addAll(flightPathHandler.convertAngleToFlightPath(order.getOrderNo(), angles));
+                flightLngLat.addAll(flightPathHandler.convertAngleToList(angles));
             }
+
         }
 
         // Output deliveries to file
