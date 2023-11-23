@@ -1,6 +1,7 @@
 package uk.ac.ed.inf.Flight;
 
 import uk.ac.ed.inf.LngLatHandler;
+import uk.ac.ed.inf.ilp.constant.SystemConstants;
 import uk.ac.ed.inf.ilp.data.LngLat;
 import uk.ac.ed.inf.ilp.data.NamedRegion;
 
@@ -66,22 +67,23 @@ public class PathGenerator {
 
         while (!openSet.isEmpty()) {
             Location current = openSet.poll();
+            System.out.println(lngLatHandler.isCloseTo(current.getPosition(), endPosition));
             checkIfLeftCentralRegion(current.getPosition(), centralRegion);
 
             // Goal check
             if (lngLatHandler.isCloseTo(current.getPosition(), endPosition)) {
+                System.out.println("hi");
                 return reconstructPath(current);
             }
 
             closedSet.add(current);
-
             // Iterate over neighbors
             for (Location neighbor : getNeighbours(current, endPosition, noFlyZones, centralRegion)) {
                 if (closedSet.contains(neighbor)) continue;
 
                 double tentativeGScore = current.getGScore() + lngLatHandler.distanceTo(current.getPosition(), neighbor.getPosition());
 
-                if (!openSet.contains(neighbor) || tentativeGScore < neighbor.getGScore()) {
+                if (tentativeGScore < neighbor.getGScore()) {
                     neighbor.setCameFrom(current);
                     neighbor.setGScore(tentativeGScore);
                     neighbor.setHScore(hScore(neighbor.getPosition(), endPosition));
@@ -92,6 +94,8 @@ public class PathGenerator {
                 }
             }
         }
+
+
 
         return new ArrayList<>();
     }
@@ -106,10 +110,12 @@ public class PathGenerator {
 
         while (current.getCameFrom() != null) {
             double angle = current.getAngle();
+            System.out.println(angle);
             // Skips over the start angle, as the start position cannot have a previous angle.
             if (Double.isNaN(angle)) {
                 continue;
             } else {
+
                 path.add(angle);
             }
             current = current.getCameFrom();
@@ -165,7 +171,7 @@ public class PathGenerator {
             return Double.POSITIVE_INFINITY;
         }
 
-        else return lngLatHandler.distanceTo(position, nextPosition);
+        else return SystemConstants.DRONE_MOVE_DISTANCE;
     }
 
     /**

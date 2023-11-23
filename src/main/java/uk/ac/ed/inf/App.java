@@ -3,6 +3,7 @@ package uk.ac.ed.inf;
 import uk.ac.ed.inf.Flight.FlightPathHandler;
 import uk.ac.ed.inf.IO.OutputToFile;
 import uk.ac.ed.inf.IO.RetrieveRestData;
+import uk.ac.ed.inf.OutputClasses.FlightPath;
 import uk.ac.ed.inf.ilp.constant.OrderStatus;
 import uk.ac.ed.inf.ilp.constant.OrderValidationCode;
 import uk.ac.ed.inf.ilp.data.NamedRegion;
@@ -10,6 +11,7 @@ import uk.ac.ed.inf.ilp.data.Order;
 import uk.ac.ed.inf.ilp.data.Restaurant;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -42,11 +44,15 @@ public class App {
         Restaurant[] restaurants   = retrieve_data.retrieveData(api_url, "restaurants",  Restaurant.class);
         NamedRegion[] no_fly_zones = retrieve_data.retrieveData(api_url, "noFlyZones",  NamedRegion.class);
         NamedRegion central_area   = retrieve_data.retrieveCentralArea(api_url, "centralArea");
-        System.out.println(central_area);
+
+        ArrayList<FlightPath> flightPaths = new ArrayList<FlightPath>();
+
         // Validate all the orders retrieved
         for (Order order : orders) {
-            System.out.println(order.getOrderNo());
+
             validator.validateOrder(order, restaurants);
+//            System.out.print(order.getOrderNo());
+//            System.out.println(order.getOrderStatus());
         }
 
         // Obtain flight path for all orders retrieved
@@ -56,14 +62,14 @@ public class App {
 
             // Only get flight path of valid orders
             if (order_status_valid && order_code_valid) {
-                System.out.println(Arrays.toString(flightPathHandler.GenerateFlightPath(order, restaurants, no_fly_zones, central_area)));
-                System.out.println();
+                flightPaths.addAll(Arrays.stream(flightPathHandler.GenerateFlightPath(order, restaurants, no_fly_zones, central_area)).toList());
             }
         }
 
         // Output deliveries to file
         OutputToFile output = new OutputToFile();
         output.outputDeliveries(orders, date);
+        output.outputFlightPaths(flightPaths, date);
         long t2 = System.nanoTime();
         System.out.println((t2 - t1) / 1_000_000);
     }

@@ -2,10 +2,12 @@ package uk.ac.ed.inf.IO;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import uk.ac.ed.inf.OutputClasses.Delivery;
+import uk.ac.ed.inf.OutputClasses.FlightPath;
 import uk.ac.ed.inf.ilp.data.Order;
 
 import java.io.File;
 import java.time.LocalDate;
+import java.util.ArrayList;
 
 
 public class OutputToFile {
@@ -31,6 +33,19 @@ public class OutputToFile {
             mapper.writeValue(new File("deliveries-" + date.toString() + ".json"), deliveries);
         } catch (Exception e) {
             System.err.println("Failed to write deliveries to file: " + e);
+            System.exit(1);
+        }
+    }
+
+    public void outputFlightPaths(ArrayList<FlightPath> flightPaths, LocalDate date) {
+        ObjectMapper mapper = new ObjectMapper();
+        FlightPath[] flightPathsArray = new FlightPath[flightPaths.size()];
+        flightPathsArray = flightPaths.toArray(flightPathsArray);
+
+        try {
+            mapper.writeValue(new File("flight-paths-" + date.toString() + ".json"), flightPathsArray);
+        } catch (Exception e) {
+            System.err.println("Failed to write flight paths to file: " + e);
             System.exit(1);
         }
     }
