@@ -7,33 +7,48 @@ import uk.ac.ed.inf.ilp.data.*;
 import java.util.*;
 
 
-public class FlightPathHandler {
+/**
+ * This class is to be interacted with to get and format flight data.
+ */
+public class FlightDataHandler {
     private final LngLatHandler lngLatHandler = new LngLatHandler();
     private final LngLat START_POSITION = new LngLat((-3.186874), 55.944494);  // Appleton Tower.
 
-    public FlightPathHandler() {
+    public FlightDataHandler() {
     }
 
-
-    public ArrayList<Double> generateFlightAngles(Order order, Restaurant[] restaurants, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
+    /**
+     * Calculates the angles the drone makes to get from A to B.
+     * @param order The order to generate flight paths for.
+     * @param restaurants The list of restaurants.
+     * @param noFlyZones The list of no-fly zones.
+     * @param centralRegion The central region.
+     * @return A list of angles.
+     */
+    public ArrayList<Double> calculateAngles(Order order, Restaurant[] restaurants, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
         // Find restaurant position.
         Pizza targetPizza = order.getPizzasInOrder()[0];   // All pizzas come from the same restaurant.
         LngLat restaurantLocation = null;
 
         // Finds the restaurant that the pizza is from.
         for (Restaurant restaurant : restaurants) {
-            ArrayList<Pizza> menu = new ArrayList<>(Arrays.asList(restaurant.menu()));
+            List<Pizza> menu = Arrays.asList(restaurant.menu());
             if (menu.contains(targetPizza)) {
                 restaurantLocation = restaurant.location();
                 break;
             }
         }
 
-        // From Appleton Tower to restaurant.
+        // Skips order if restaurant is not found, however this should not be possible.
+        if (restaurantLocation == null) {
+            return null;
+        }
+
+       // The anglePath is the list of angles, set it initially as the forward path.
         ArrayList<Double> anglePath = new PathGenerator().createFlightAngles(START_POSITION, restaurantLocation, noFlyZones, centralRegion);
 
         // If a path is not found, return null such that main function can skip this order.
-        if (anglePath.size() == 0) {
+        if (anglePath == null) {
             return null;
         }
 

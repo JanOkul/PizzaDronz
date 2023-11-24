@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import uk.ac.ed.inf.ilp.data.NamedRegion;
+
 import java.net.URL;
 
 
@@ -15,66 +16,74 @@ public class RetrieveRestData {
     }
 
     /**
-     * Generic method that retrieves any list data type from REST.
-     * Order - Retrieves orders for a particular date.
-     * Restaurant - Retrieves available restaurants.
-     * NoFlyZone - Retrieves no-fly zones.
+     * Retrieves Order/Restaurant/NoFlyZone data from the REST API.
      *
-     * @param apiUrl The URL that the data is retrieved from.
-     * @param dataClass The class of the data that is retrieved (Type.class).
-     * @return An array of the data retrieved.
-     * @param <T> Order, Restaurant, NamedRegion
+     * @param apiUrl    Rest API URL.
+     * @param urlPath   The url path to the website for different data types.
+     * @param dataClass The class that the data retrieved should be mapped to.
+     * @param <T>       Generic type as the procedure for getting data is the same for Order/Restaurant/NoFlyZone.
+     * @return An array of REST API data.
      */
-    public <T> T[] retrieveData(String apiUrl, String extension, Class<T> dataClass) {
+    public <T> T[] retrieveData(String apiUrl, String urlPath, Class<T> dataClass) {
         T[] data = null;
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
 
         // Adds a slash to end of domain if it is not there.
-        if (!apiUrl.endsWith("/")){
+        if (!apiUrl.endsWith("/")) {
             apiUrl += "/";
         }
 
+        // Tries to retrieve data from REST API.
         try {
-            URL url = new URL(apiUrl + extension);
-            JavaType type = TypeFactory.defaultInstance().constructArrayType(dataClass);
-
-            // Maps JSON lines to an array of the specified type
-            data = mapper.readValue(url, type);
+            URL url = new URL(apiUrl + urlPath);
+            JavaType type = TypeFactory.defaultInstance().constructArrayType(dataClass);    // Creates an array type of the data class.
+            data = objectMapper.readValue(url, type);
         } catch (Exception e) {
-            System.err.println("Failed to obtain REST data for: " + dataClass);
-            System.err.println("The error that occurred is: " + e);
+            System.err.println("RetrieveRestData: Failed to obtain REST data for: " + dataClass);
+            System.err.println("RetrieveRestData: The error that occurred is: " + e);
             System.exit(1);
         }
+
+        if (data == null) {
+            System.err.println("RetrieveRestData: Data is null for: " + dataClass);
+            System.exit(1);
+        }
+
         return data;
     }
 
-        /**
-         * Retrieves the central area.
-         * @param apiUrl The URL of the Rest API.
-         * @return A NamedRegion, if an error occurs, then null is returned.
-         */
-        public NamedRegion retrieveCentralArea(String apiUrl, String extension) {
-            NamedRegion centralArea = null;
+    /**
+     * Retrieves the central area.
+     *
+     * @param apiUrl The URL of the Rest API.
+     * @return The central area.
+     */
+    public NamedRegion retrieveCentralArea(String apiUrl, String extension) {
+        NamedRegion centralArea = null;
 
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.registerModule(new JavaTimeModule());
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
 
-            // Adds a slash to end of domain if it is not there.
-            if (!apiUrl.endsWith("/")){
-                apiUrl += "/";
-            }
+        // Adds a slash to end of domain if it is not there.
+        if (!apiUrl.endsWith("/")) {
+            apiUrl += "/";
+        }
 
-            // Tries to receive no-fly zones from REST API.
-            try {
-                URL url = new URL(apiUrl + extension);
-                centralArea = mapper.readValue(url, NamedRegion.class);
-            } catch (Exception e) {
-                System.err.println("Failed to obtain REST data for: " + NamedRegion.class);
-                System.err.println("The error that occurred is: " + e);
-                System.exit(1);
-            }
+        // Tries to receive no-fly zones from REST API.
+        try {
+            URL url = new URL(apiUrl + extension);
+            centralArea = objectMapper.readValue(url, NamedRegion.class);
+        } catch (Exception e) {
+            System.err.println("RetrieveRestData: Failed to obtain REST data for: " + NamedRegion.class);
+            System.err.println("RetrieveRestData: The error that occurred is: " + e);
+            System.exit(1);
+        }
 
-            return centralArea;
+        if (centralArea == null) {
+            System.err.println("RetrieveRestData: Data is null for: " + NamedRegion.class);
+            System.exit(1);
+        }
+        return centralArea;
     }
 }

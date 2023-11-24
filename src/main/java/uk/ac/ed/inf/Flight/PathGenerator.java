@@ -32,10 +32,12 @@ class Location{
 public class PathGenerator {
     private final double[] DIRECTIONS;
     private final LngLatHandler lngLatHandler;
+    private boolean leftCentralRegion;
 
     protected PathGenerator() {
         DIRECTIONS = new double[]{0.0, 22.5, 45.0, 67.5, 90.0, 112.5, 135.0, 157.5, 180.0, 202.5, 225.0, 247.5, 270.0, 292.5, 315.0, 337.5};
         lngLatHandler = new LngLatHandler();
+        leftCentralRegion = false;
     }
 
 
@@ -49,6 +51,8 @@ public class PathGenerator {
         while (!openSet.isEmpty()) {
             Location current = openSet.poll();
 
+            canDroneLeaveCentral(centralRegion, current.getPosition());
+
             // If current location is close to the end position, reconstruct and return the path.
             if (lngLatHandler.isCloseTo(current.getPosition(), endPosition)) {
                 return reconstructPath(current);
@@ -57,7 +61,7 @@ public class PathGenerator {
             // Add current location to closed set to avoid reprocessing it.
             closedSet.add(current.getPosition());
 
-            ArrayList<Location> neighbours = getNeighbours(current, new Location(endPosition, null, 0, 0, 0), noFlyZones);
+            ArrayList<Location> neighbours = getNeighbours(current, new Location(endPosition, null, 0, 0, 0), noFlyZones, centralRegion);
             for (Location neighbour : neighbours) {
                 // Skip processing if this neighbour has already been evaluated.
                 if (closedSet.contains(neighbour.getPosition())) {
@@ -70,30 +74,32 @@ public class PathGenerator {
         }
 
         // Return an empty path if no path is found.
-        return new ArrayList<>();
+        return null;
     }
 
 
 
-    protected double hScore(LngLat position, LngLat endPosition) {
+    private double hScore(LngLat position, LngLat endPosition) {
         return lngLatHandler.distanceTo(position, endPosition);
     }
 
-    protected double gScore(LngLat position, LngLat nextPosition) {
+    private double gScore(LngLat position, LngLat nextPosition) {
         return lngLatHandler.distanceTo(position, nextPosition);
     }
 
-    protected ArrayList<Location> getNeighbours(Location position, Location endPosition, NamedRegion[] noFlyZones) {
+    private ArrayList<Location> getNeighbours(Location position, Location endPosition, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
         ArrayList<Location> neighbours = new ArrayList<>();
+
         for (double direction: DIRECTIONS) {
-            LngLat potentialNextPosition = lngLatHandler.nextPosition(position.getPosition(), direction);
+            LngLat currentPosition = position.getPosition();
+            LngLat potentialNextPosition = lngLatHandler.nextPosition(currentPosition, direction);
 
 
-            if (!legalMove(potentialNextPosition, noFlyZones)) {
+            if (!legalMove(currentPosition, potentialNextPosition, noFlyZones, centralRegion)) {
                 continue;
             }
 
-            double gScore = gScore(position.getPosition(), potentialNextPosition);
+            double gScore = gScore(currentPosition, potentialNextPosition);
             double hScore = hScore(potentialNextPosition, endPosition.getPosition());
 
             neighbours.add(new Location(potentialNextPosition, position, gScore, hScore, direction));
@@ -101,16 +107,20 @@ public class PathGenerator {
         return neighbours;
     }
 
-    protected boolean legalMove(LngLat position, NamedRegion[] noFlyZones) {
+    private boolean legalMove(LngLat currentPosition, LngLat potentialPosition, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
         for (NamedRegion noFlyZone: noFlyZones) {
-            if (lngLatHandler.isInRegion(position, noFlyZone)) {
+            if (lngLatHandler.isInRegion(potentialPosition, noFlyZone)) {
                 return false;
             }
         }
-        return true;
+
+        boolean currentInCentral = lngLatHandler.isInRegion(currentPosition, centralRegion);
+        boolean potentialInCentral = lngLatHandler.isInRegion(potentialPosition, centralRegion);
+
+        return !currentInCentral || potentialInCentral || !leftCentralRegion;
     }
 
-    protected ArrayList<Double> reconstructPath(Location current) {
+    private ArrayList<Double> reconstructPath(Location current) {
         ArrayList<Double> path = new ArrayList<>();
         while (current.getCameFrom() != null) {
             path.add(current.getAngle());
@@ -118,6 +128,12 @@ public class PathGenerator {
         }
         Collections.reverse(path);
         return path;
+    }
+
+    private void canDroneLeaveCentral(NamedRegion centralRegion, LngLat dronePosition) {
+        if (!leftCentralRegion && !lngLatHandler.isInRegion(dronePosition, centralRegion)) {
+            leftCentralRegion = true;
+        }
     }
 
 }

@@ -29,8 +29,7 @@ public class OrderValidator implements OrderValidation {
     public Order validateOrder(Order orderToValidate, Restaurant[] definedRestaurants) {
 
         if (orderToValidate == null) {
-            System.err.println("Order validation: order is null");
-            System.exit(1);
+            return null;    // Handled in a main class.
         }
 
         if (definedRestaurants == null) {

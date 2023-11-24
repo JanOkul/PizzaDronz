@@ -5,8 +5,6 @@ import uk.ac.ed.inf.ilp.data.NamedRegion;
 import uk.ac.ed.inf.ilp.constant.*;
 import uk.ac.ed.inf.ilp.interfaces.LngLatHandling;
 
-import java.util.ArrayList;
-
 public class LngLatHandler implements LngLatHandling {
 
     public LngLatHandler() {
@@ -42,33 +40,29 @@ public class LngLatHandler implements LngLatHandling {
 
     /**
      * Checks if a point is in a region by using ray casting.
-     * @param position The position to check.
+     * @param point The position to check.
      * @param region The region to check.
      * @return True if the point is in the region, false otherwise.
      */
-    public boolean isInRegion(LngLat position, NamedRegion region) {
-        double x = position.lng();
-        double y = position.lat();
+    public boolean isInRegion(LngLat point, NamedRegion region) {
+        boolean isInside = false;
+        LngLat[] vertices = region.vertices();
+        int numVertices = vertices.length;
 
-        ArrayList<Double> regionX = new ArrayList<>();
-        ArrayList<Double> regionY = new ArrayList<>();
-        for (LngLat point: region.vertices()) {
-            regionX.add(point.lng());
-            regionY.add(point.lat());
+        for (int i = 0, j = numVertices - 1; i < numVertices; j = i++) {
+
+            boolean isLatInRange = vertices[i].lat() > point.lat() != vertices[j].lat() > point.lat();
+
+            double edgeSlope = (vertices[j].lng() - vertices[i].lng()) / (vertices[j].lat() - vertices[i].lat());
+            double calculatedLng = edgeSlope * (point.lat() - vertices[i].lat()) + vertices[i].lng();
+            boolean isLngToLeft = point.lng() < calculatedLng;
+
+            if (isLatInRange && isLngToLeft) {
+                isInside = !isInside;
+            }
         }
 
-
-        int i, j, nvert = regionX.size();
-        boolean c = false;
-
-        // Ray casting algorithm.
-        for (i = 0, j = nvert-1; i < nvert; j = i++) {
-            if ( ((regionY.get(i) >y) != (regionY.get(j) >y)) &&
-                    (x < (regionX.get(j) - regionX.get(i)) * (y- regionY.get(i)) / (regionY.get(j) - regionY.get(i)) + regionX.get(i)) )
-                c = !c;
-        }
-        return c;
-
+        return isInside;
     }
 
     /**
