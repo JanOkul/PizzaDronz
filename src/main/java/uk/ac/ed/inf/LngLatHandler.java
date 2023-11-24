@@ -5,6 +5,8 @@ import uk.ac.ed.inf.ilp.data.NamedRegion;
 import uk.ac.ed.inf.ilp.constant.*;
 import uk.ac.ed.inf.ilp.interfaces.LngLatHandling;
 
+import java.util.ArrayList;
+
 public class LngLatHandler implements LngLatHandling {
 
     public LngLatHandler() {
@@ -45,23 +47,28 @@ public class LngLatHandler implements LngLatHandling {
      * @return True if the point is in the region, false otherwise.
      */
     public boolean isInRegion(LngLat position, NamedRegion region) {
-        LngLat[] points = region.vertices();
-        int noOfPoints = points.length;
+        double x = position.lng();
+        double y = position.lat();
 
-        boolean inRegion = false;
-
-        for (int i = 0, j = noOfPoints - 1; i < noOfPoints; j = i++) {
-            double xi = points[i].lng();
-            double yi = points[i].lat();
-            double xj = points[j].lng();
-            double yj = points[j].lat();
-
-            // Checks if the point is between two vertices.
-            if (((yi > position.lat()) != (yj > position.lat())) && (position.lng() < (xj - xi) * (position.lat() - yi) / (yj - yi) + xi)) {
-                inRegion = !inRegion;
-            }
+        ArrayList<Double> regionX = new ArrayList<>();
+        ArrayList<Double> regionY = new ArrayList<>();
+        for (LngLat point: region.vertices()) {
+            regionX.add(point.lng());
+            regionY.add(point.lat());
         }
-        return inRegion;
+
+
+        int i, j, nvert = regionX.size();
+        boolean c = false;
+
+        // Ray casting algorithm.
+        for (i = 0, j = nvert-1; i < nvert; j = i++) {
+            if ( ((regionY.get(i) >y) != (regionY.get(j) >y)) &&
+                    (x < (regionX.get(j) - regionX.get(i)) * (y- regionY.get(i)) / (regionY.get(j) - regionY.get(i)) + regionX.get(i)) )
+                c = !c;
+        }
+        return c;
+
     }
 
     /**
@@ -81,4 +88,5 @@ public class LngLatHandler implements LngLatHandling {
         y2 = y1 + (SystemConstants.DRONE_MOVE_DISTANCE * Math.sin(angle));
         return new LngLat(x2, y2);
     }
+
 }

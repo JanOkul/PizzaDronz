@@ -3,7 +3,10 @@ package uk.ac.ed.inf;
 import uk.ac.ed.inf.Flight.FlightPathHandler;
 import uk.ac.ed.inf.IO.OutputToFile;
 import uk.ac.ed.inf.IO.RetrieveRestData;
+import uk.ac.ed.inf.OutputClasses.Feature;
+import uk.ac.ed.inf.OutputClasses.FeatureCollection;
 import uk.ac.ed.inf.OutputClasses.FlightPath;
+import uk.ac.ed.inf.OutputClasses.LineString;
 import uk.ac.ed.inf.ilp.constant.OrderStatus;
 import uk.ac.ed.inf.ilp.constant.OrderValidationCode;
 import uk.ac.ed.inf.ilp.data.LngLat;
@@ -13,9 +16,6 @@ import uk.ac.ed.inf.ilp.data.Restaurant;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
 
 /**
  * Hello world!
@@ -24,9 +24,11 @@ import java.util.List;
 public class App {
     public static void main(String[] args) {
         long t1 = System.nanoTime();
-        OrderValidator validator        = new OrderValidator();
+        OrderValidator validator = new OrderValidator();
         FlightPathHandler flightPathHandler = new FlightPathHandler();
-        RetrieveRestData retrieve_data  = new RetrieveRestData();
+        RetrieveRestData retrieve_data = new RetrieveRestData();
+
+//        System.out.println(new LngLatHandler().isInRegion(new LngLat(-3.186874, 55.944494), new NamedRegion("test", new LngLat[]{new LngLat(-4, 54), new LngLat(-4, 56), new LngLat(-2, 56), new LngLat(-2, 54)}) ));
 
         // Check if the correct number of arguments is passed
         if (args.length != 2) {
@@ -43,10 +45,10 @@ public class App {
         LocalDate date = LocalDate.parse(args[1]);
 
         // Retrieve data from REST API
-        Order[] orders             = retrieve_data.retrieveData(api_url, "orders/" + date,  Order.class);
-        Restaurant[] restaurants   = retrieve_data.retrieveData(api_url, "restaurants",  Restaurant.class);
-        NamedRegion[] no_fly_zones = retrieve_data.retrieveData(api_url, "noFlyZones",  NamedRegion.class);
-        NamedRegion central_area   = retrieve_data.retrieveCentralArea(api_url, "centralArea");
+        Order[] orders = retrieve_data.retrieveData(api_url, "orders/" + date, Order.class);
+        Restaurant[] restaurants = retrieve_data.retrieveData(api_url, "restaurants", Restaurant.class);
+        NamedRegion[] no_fly_zones = retrieve_data.retrieveData(api_url, "noFlyZones", NamedRegion.class);
+        NamedRegion central_area = retrieve_data.retrieveCentralArea(api_url, "centralArea");
 
         // Holds the flight data for json and geo-json.
         ArrayList<FlightPath> flightPaths = new ArrayList<>();
@@ -62,10 +64,12 @@ public class App {
 
             // Only get flight path of valid orders
             if (order_status_valid && order_code_valid) {
+
                 ArrayList<Double> angles = flightPathHandler.generateFlightAngles(order, restaurants, no_fly_zones, central_area);
                 if (angles == null) {
                     continue;
                 }
+
                 // Adds data into arraylists for their output type.
                 flightPaths.addAll(flightPathHandler.convertAngleToFlightPath(order.getOrderNo(), angles));
                 flightLngLat.addAll(flightPathHandler.convertAngleToList(angles));
@@ -73,11 +77,33 @@ public class App {
 
         }
 
-        // Output deliveries to file
-        OutputToFile output = new OutputToFile();
-        output.outputDeliveries(orders, date);
-        output.outputFlightPaths(flightPaths, date);
-        long t2 = System.nanoTime();
-        System.out.println((t2 - t1) / 1_000_000);
+
+
+
+            // Create GeoJson
+
+            LineString lineString = new LineString();
+
+            for (LngLat lngLat : flightLngLat) {
+                ArrayList<Double> coordinates = new ArrayList<>();
+                coordinates.add(lngLat.lng());
+                coordinates.add(lngLat.lat());
+                lineString.addCoordinates(coordinates);
+            }
+
+            Feature feature = new Feature(lineString);
+
+
+            FeatureCollection featureCollection = new FeatureCollection();
+            featureCollection.addFeature(feature);
+
+            // Output deliveries to file
+            OutputToFile output = new OutputToFile();
+            output.outputDeliveries(orders, date);
+            output.outputFlightPaths(flightPaths, date);
+            output.outputGeoJson(featureCollection, date);
+            long t2 = System.nanoTime();
+            System.out.println((t2 - t1) / 1_000_000);
+        }
     }
-}
+

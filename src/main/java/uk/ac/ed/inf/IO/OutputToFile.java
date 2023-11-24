@@ -2,6 +2,7 @@ package uk.ac.ed.inf.IO;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import uk.ac.ed.inf.OutputClasses.Delivery;
+import uk.ac.ed.inf.OutputClasses.FeatureCollection;
 import uk.ac.ed.inf.OutputClasses.FlightPath;
 import uk.ac.ed.inf.ilp.data.Order;
 
@@ -44,6 +45,17 @@ public class OutputToFile {
 
         try {
             mapper.writeValue(new File("flight-paths-" + date.toString() + ".json"), flightPathsArray);
+        } catch (Exception e) {
+            System.err.println("Failed to write flight paths to file: " + e);
+            System.exit(1);
+        }
+    }
+
+    public void outputGeoJson(FeatureCollection featureCollection, LocalDate date) {
+        ObjectMapper mapper = new ObjectMapper();
+
+        try {
+            mapper.writeValue(new File("drone-" + date.toString() + ".geojson"), featureCollection);
         } catch (Exception e) {
             System.err.println("Failed to write flight paths to file: " + e);
             System.exit(1);
