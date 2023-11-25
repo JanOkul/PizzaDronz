@@ -15,6 +15,9 @@ import java.util.*;
 
 import static java.util.Arrays.asList;
 
+/**
+ * Ensues that a given order is valid so no errors occur when trying to deliver orders.
+ */
 public class OrderValidator implements OrderValidation {
 
     public OrderValidator() {
@@ -22,7 +25,8 @@ public class OrderValidator implements OrderValidation {
 
     /**
      * Validates an order and returns the order with the correct status and validation code.
-     * @param orderToValidate The order to validate.
+     *
+     * @param orderToValidate    The order to validate.
      * @param definedRestaurants The restaurants that are currently supported.
      * @return The order with the correct status and validation code.
      */
@@ -54,18 +58,31 @@ public class OrderValidator implements OrderValidation {
         }
 
         // ---------- Checks for undefined pizzas -----------
-        boolean validPizza = false;
+        boolean invalidPizza = false;
 
-        for (Pizza pizza: orderedPizzas) {
-            for (Restaurant restaurant: definedRestaurants) {
-                if (asList(restaurant.menu()).contains(pizza)) {
-                    validPizza = true;
+        // Checks if the pizzas ordered are on the menu of any restaurant
+        for (Pizza pizza : orderedPizzas) {
+            // Checks if any pizza is null
+            if (pizza == null) {
+                invalidPizza = true;
+                break;
+            }
+
+            // Checks if pizzas are in any menu.
+            boolean isPizzaInAnyMenu = false;
+            for (Restaurant restaurant : definedRestaurants) {
+                if (Arrays.asList(restaurant.menu()).contains(pizza)) {
+                    isPizzaInAnyMenu = true;
                     break;
                 }
             }
+            if (!isPizzaInAnyMenu) {
+                invalidPizza = true;
+                break;
+            }
         }
 
-        if (!validPizza) {
+        if (invalidPizza) {
             orderToValidate.setOrderStatus(OrderStatus.INVALID);
             orderToValidate.setOrderValidationCode(OrderValidationCode.PIZZA_NOT_DEFINED);
             return orderToValidate;
@@ -73,12 +90,12 @@ public class OrderValidator implements OrderValidation {
 
         // ---------- Checks if pizza price is accurate ----------
         int pizzaPriceSum = 0;
-        for (Pizza pizza: orderedPizzas) {
+        for (Pizza pizza : orderedPizzas) {
             pizzaPriceSum += pizza.priceInPence();
         }
 
         // Checks if pizza price + delivery is the same as the total price.
-        if (pizzaPriceSum+100 != orderToValidate.getPriceTotalInPence()) {
+        if (pizzaPriceSum + 100 != orderToValidate.getPriceTotalInPence()) {
             orderToValidate.setOrderStatus(OrderStatus.INVALID);
             orderToValidate.setOrderValidationCode(OrderValidationCode.TOTAL_INCORRECT);
             return orderToValidate;
@@ -89,8 +106,8 @@ public class OrderValidator implements OrderValidation {
         // Holds the restaurant that the pizzas are ordered from.
         Set<Restaurant> pizzaOriginRestaurant = new HashSet<>();
 
-        for (Restaurant restaurant: definedRestaurants) {
-            for (Pizza pizza: orderedPizzas) {
+        for (Restaurant restaurant : definedRestaurants) {
+            for (Pizza pizza : orderedPizzas) {
                 // Checks if pizza is on the menu of the restaurant.
                 if (asList(restaurant.menu()).contains(pizza)) {
                     // Checks if restaurant is open at time of order.
@@ -122,14 +139,16 @@ public class OrderValidator implements OrderValidation {
         boolean validCCNumber = true;
 
         // Loop looks for any characters in the card number.
-        for (char digit: creditCardNo) {   // Converts string to char array for a foreach loop
+        for (char digit : creditCardNo) {   // Converts string to char array for a foreach loop
             if (!Character.isDigit(digit)) {
                 validCCNumber = false;
             }
         }
 
         // Checks credit card length.
-        if (creditCardNo.length != 16) {validCCNumber = false;}
+        if (creditCardNo.length != 16) {
+            validCCNumber = false;
+        }
 
         if (!validCCNumber) {
             orderToValidate.setOrderStatus(OrderStatus.INVALID);
@@ -142,13 +161,15 @@ public class OrderValidator implements OrderValidation {
 
         // Loop looks for any characters in the cvv.
         boolean validCVV = true;
-        for (char digit: cvv.toCharArray()) {
+        for (char digit : cvv.toCharArray()) {
             if (!Character.isDigit(digit)) {
                 validCVV = false;
             }
         }
 
-        if (cvv.length() != 3) {validCVV = false;}
+        if (cvv.length() != 3) {
+            validCVV = false;
+        }
 
         if (!validCVV) {
             orderToValidate.setOrderStatus(OrderStatus.INVALID);
@@ -160,7 +181,7 @@ public class OrderValidator implements OrderValidation {
         String[] expiryDateString = creditCardInfo.getCreditCardExpiry().split("/");
         LocalDate expiryDate;
         int expiryMonth = Integer.parseInt(expiryDateString[0]);
-        int expiryYear = Integer.parseInt(expiryDateString[1])+2000;
+        int expiryYear = Integer.parseInt(expiryDateString[1]) + 2000;
         // Converts integers into LocalDate of the last day of expiry month.
 
         try {

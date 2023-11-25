@@ -6,7 +6,7 @@ import uk.ac.ed.inf.IO.RetrieveRestData;
 import uk.ac.ed.inf.OutputClasses.Feature;
 import uk.ac.ed.inf.OutputClasses.FeatureCollection;
 import uk.ac.ed.inf.OutputClasses.FlightPath;
-import uk.ac.ed.inf.OutputClasses.LineString;
+import uk.ac.ed.inf.OutputClasses.Geometry;
 import uk.ac.ed.inf.ilp.constant.OrderStatus;
 import uk.ac.ed.inf.ilp.constant.OrderValidationCode;
 import uk.ac.ed.inf.ilp.data.LngLat;
@@ -97,18 +97,18 @@ public class App {
         output.outputFlightPaths(flightPaths, date);
 
         // Create GeoJson
-        LineString lineString = new LineString();
+        Geometry geometry = new Geometry();
 
         // Adds coordinates to the line string.
         for (LngLat lngLat : lngLats) {
             ArrayList<Double> coordinates = new ArrayList<>();
             coordinates.add(lngLat.lng());
             coordinates.add(lngLat.lat());
-            lineString.addCoordinates(coordinates);
+            geometry.addCoordinates(coordinates);
         }
 
         // Creates a feature and feature collection.
-        Feature feature = new Feature(lineString);
+        Feature feature = new Feature(geometry);
         FeatureCollection featureCollection = new FeatureCollection();
         featureCollection.addFeature(feature);
 
@@ -116,4 +116,3 @@ public class App {
         output.outputGeoJson(featureCollection, date);
     }
 }
-

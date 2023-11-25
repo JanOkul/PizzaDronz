@@ -6,29 +6,76 @@ import uk.ac.ed.inf.ilp.data.NamedRegion;
 
 import java.util.*;
 
-
-class Location{
+/**
+ * An extended version of LngLat that represents a move made by the drone.
+ */
+class Move {
     private final LngLat position;
-    private final Location cameFrom;
+    private final Move cameFrom;
     private final double gScore;
     private final double hScore;
     private final double angle;     // The angle from the previous position to this position.
 
-    Location(LngLat position, Location cameFrom, double gScore, double hScore, double angle){
+
+    /**
+     * Constructs a new Move.
+     *
+     * @param position The position of this move.
+     * @param cameFrom The previous move in the path.
+     * @param gScore   The cost from the start node to this node.
+     * @param hScore   The heuristic cost estimate from this node to the end node.
+     * @param angle    The angle from the previous position to this position.
+     */
+    Move(LngLat position, Move cameFrom, double gScore, double hScore, double angle) {
         this.position = position;
         this.cameFrom = cameFrom;
         this.gScore = gScore;
         this.hScore = hScore;
         this.angle = angle;
     }
-    // Getters
-    LngLat getPosition(){return this.position;}
-    Location getCameFrom(){return this.cameFrom;}
-    double getFScore(){return this.gScore + this.hScore;}
-    double getAngle(){return this.angle;}
+
+    /**
+     * Gets the position of where this move is.
+     *
+     * @return A LngLat of the move's position
+     */
+    LngLat getPosition() {
+        return this.position;
+    }
+
+    /**
+     * Gets the move of where this move came from.
+     * Used to nest moves in moves to get the final path.
+     *
+     * @return A Move object where this move came from.
+     */
+    Move getCameFrom() {
+        return this.cameFrom;
+    }
+
+    /**
+     * Gets the F-Score to get to this position.
+     *
+     * @return A double F-Score.
+     */
+    double getFScore() {
+        return this.gScore + this.hScore;
+    }
+
+    /**
+     * The angle to get from {@link #cameFrom} to {@link #position}
+     *
+     * @return A double which is an angle.
+     */
+    double getAngle() {
+        return this.angle;
+    }
 }
 
-
+/**
+ * Creates a flight path from a start position to an end position, avoiding no-fly zones
+ * and ensures that it doesn't leave the central region, if it has re-entered it.
+ */
 public class PathGenerator {
     private final double[] DIRECTIONS;
     private final LngLatHandler lngLatHandler;
@@ -41,15 +88,27 @@ public class PathGenerator {
     }
 
 
+    /**
+     * Calculates a flight path from a start position to an end position using
+     * the A* pathfinding algorithm. The path avoids no-fly zones and considers
+     * the central region restrictions.
+     *
+     * @param startPosition The starting position of the drone.
+     * @param endPosition   The target position to reach.
+     * @param noFlyZones    An array of regions where flying is not allowed.
+     * @param centralRegion The central region where the drone cannot leave once it as re-entered.
+     * @return A list of angles representing the drone's path, or null if no valid path is found.
+     */
     protected ArrayList<Double> createFlightAngles(LngLat startPosition, LngLat endPosition, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
-        PriorityQueue<Location> openSet = new PriorityQueue<>(Comparator.comparingDouble(Location::getFScore));
+        PriorityQueue<Move> openSet = new PriorityQueue<>(Comparator.comparingDouble(Move::getFScore));
         Set<LngLat> closedSet = new HashSet<>();
-        Location start = new Location(startPosition, null, 0, hScore(startPosition, endPosition), 0);
+        Move start = new Move(startPosition, null, 0, hScore(startPosition, endPosition), 0);
+        leftCentralRegion = false;
 
         openSet.add(start);
 
         while (!openSet.isEmpty()) {
-            Location current = openSet.poll();
+            Move current = openSet.poll();
 
             canDroneLeaveCentral(centralRegion, current.getPosition());
 
@@ -61,8 +120,8 @@ public class PathGenerator {
             // Add current location to closed set to avoid reprocessing it.
             closedSet.add(current.getPosition());
 
-            ArrayList<Location> neighbours = getNeighbours(current, new Location(endPosition, null, 0, 0, 0), noFlyZones, centralRegion);
-            for (Location neighbour : neighbours) {
+            ArrayList<Move> neighbours = getNeighbours(current, new Move(endPosition, null, 0, 0, 0), noFlyZones, centralRegion);
+            for (Move neighbour : neighbours) {
                 // Skip processing if this neighbour has already been evaluated.
                 if (closedSet.contains(neighbour.getPosition())) {
                     continue;
@@ -78,19 +137,43 @@ public class PathGenerator {
     }
 
 
-
+    /**
+     * Calculates the heuristic score for a position based on its distance to the end position by using Euclidean Distance.
+     *
+     * @param position    The current position.
+     * @param endPosition The target end position.
+     * @return The heuristic score based on the distance.
+     */
     private double hScore(LngLat position, LngLat endPosition) {
         return lngLatHandler.distanceTo(position, endPosition);
     }
 
+    /**
+     * Calculates the actual score from the current position to the next position.
+     *
+     * @param position     The current position.
+     * @param nextPosition The next position.
+     * @return The actual score based on the distance between the positions.
+     */
     private double gScore(LngLat position, LngLat nextPosition) {
         return lngLatHandler.distanceTo(position, nextPosition);
     }
 
-    private ArrayList<Location> getNeighbours(Location position, Location endPosition, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
-        ArrayList<Location> neighbours = new ArrayList<>();
+    /**
+     * Generates neighboring moves from the current position, considering the possible directions,
+     * no-fly zones, and central region rules. Disregard neighbours that are not legal moves, defined
+     * in {@link #legalMove}.
+     *
+     * @param position      The current move.
+     * @param endPosition   The target end move.
+     * @param noFlyZones    An array of no-fly zones to avoid.
+     * @param centralRegion The central region.
+     * @return A list of possible neighboring moves.
+     */
+    private ArrayList<Move> getNeighbours(Move position, Move endPosition, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
+        ArrayList<Move> neighbours = new ArrayList<>();
 
-        for (double direction: DIRECTIONS) {
+        for (double direction : DIRECTIONS) {
             LngLat currentPosition = position.getPosition();
             LngLat potentialNextPosition = lngLatHandler.nextPosition(currentPosition, direction);
 
@@ -102,25 +185,47 @@ public class PathGenerator {
             double gScore = gScore(currentPosition, potentialNextPosition);
             double hScore = hScore(potentialNextPosition, endPosition.getPosition());
 
-            neighbours.add(new Location(potentialNextPosition, position, gScore, hScore, direction));
+            neighbours.add(new Move(potentialNextPosition, position, gScore, hScore, direction));
         }
         return neighbours;
     }
 
+    /**
+     * Determines whether a move from the current position to a potential position is legal,
+     * considering no-fly zones and central region rules.
+     *
+     * @param currentPosition   The current position of the drone.
+     * @param potentialPosition The potential next position of the drone.
+     * @param noFlyZones        An array of no-fly zones.
+     * @param centralRegion     The central region.
+     * @return true if the move is legal, false otherwise.
+     */
     private boolean legalMove(LngLat currentPosition, LngLat potentialPosition, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
-        for (NamedRegion noFlyZone: noFlyZones) {
+        for (NamedRegion noFlyZone : noFlyZones) {
             if (lngLatHandler.isInRegion(potentialPosition, noFlyZone)) {
                 return false;
             }
         }
 
-        boolean currentInCentral = lngLatHandler.isInRegion(currentPosition, centralRegion);
-        boolean potentialInCentral = lngLatHandler.isInRegion(potentialPosition, centralRegion);
+        boolean currentlyInCentral = lngLatHandler.isInRegion(currentPosition, centralRegion);
+        boolean potentiallyInCentral = lngLatHandler.isInRegion(potentialPosition, centralRegion);
 
-        return !currentInCentral || potentialInCentral || !leftCentralRegion;
+        /*
+            Return false if the move is currently in central,
+            will not be in central, and has already left the central zone,
+            true otherwise.
+         */
+        return !currentlyInCentral || potentiallyInCentral || !leftCentralRegion;
     }
 
-    private ArrayList<Double> reconstructPath(Location current) {
+    /**
+     * Creates the angle path by recursively going up the Move came from variable until it hits
+     * the null at the starting move.
+     *
+     * @param current The end position move from which to start reconstructing the path.
+     * @return A list of angles representing the reconstructed path.
+     */
+    private ArrayList<Double> reconstructPath(Move current) {
         ArrayList<Double> path = new ArrayList<>();
         while (current.getCameFrom() != null) {
             path.add(current.getAngle());
@@ -130,10 +235,16 @@ public class PathGenerator {
         return path;
     }
 
+    /**
+     * Updates the leftCentralRegion variable if the drone leaves the central region.
+     * Once it leaves it never updates it again.
+     *
+     * @param centralRegion The central region.
+     * @param dronePosition The current position of the drone.
+     */
     private void canDroneLeaveCentral(NamedRegion centralRegion, LngLat dronePosition) {
         if (!leftCentralRegion && !lngLatHandler.isInRegion(dronePosition, centralRegion)) {
             leftCentralRegion = true;
         }
     }
-
 }

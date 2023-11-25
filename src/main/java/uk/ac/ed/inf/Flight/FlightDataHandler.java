@@ -1,14 +1,17 @@
 package uk.ac.ed.inf.Flight;
 
-import uk.ac.ed.inf.OutputClasses.FlightPath;
 import uk.ac.ed.inf.LngLatHandler;
+import uk.ac.ed.inf.OutputClasses.FlightPath;
 import uk.ac.ed.inf.ilp.data.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 
 /**
- * This class is to be interacted with to get and format flight data.
+ * Handles the calculation and formatting of flight data for drones.
  */
 public class FlightDataHandler {
     private final LngLatHandler lngLatHandler = new LngLatHandler();
@@ -18,12 +21,16 @@ public class FlightDataHandler {
     }
 
     /**
-     * Calculates the angles the drone makes to get from A to B.
-     * @param order The order to generate flight paths for.
-     * @param restaurants The list of restaurants.
-     * @param noFlyZones The list of no-fly zones.
-     * @param centralRegion The central region.
-     * @return A list of angles.
+     * Calculates the angles at which a drone must travel to complete a given order.
+     * The method finds the restaurant associated with the order, calculates the path
+     * to the restaurant, and then calculates the return path.
+     *
+     * @param order         The order for which to generate the flight path.
+     * @param restaurants   An array of available restaurants.
+     * @param noFlyZones    An array of areas where flying is prohibited.
+     * @param centralRegion The designated central region for drone operations.
+     * @return A list of angles representing the drone's path. Returns null if no path
+     * can be found or if the restaurant is not found.
      */
     public ArrayList<Double> calculateAngles(Order order, Restaurant[] restaurants, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
         // Find restaurant position.
@@ -44,7 +51,7 @@ public class FlightDataHandler {
             return null;
         }
 
-       // The anglePath is the list of angles, set it initially as the forward path.
+        // The anglePath is the list of angles, set it initially as the forward path.
         ArrayList<Double> anglePath = new PathGenerator().createFlightAngles(START_POSITION, restaurantLocation, noFlyZones, centralRegion);
 
         // If a path is not found, return null such that main function can skip this order.
@@ -63,13 +70,21 @@ public class FlightDataHandler {
         return anglePath;
     }
 
+    /**
+     * Converts a list of angles into a list of flight path classes for a given order.
+     * Each class represents a move from one point to the next at a specified angle.
+     *
+     * @param orderNo The order number to store within the flight path class.
+     * @param angles  The list of angles representing the flight path, obtained from {@link #calculateAngles}.
+     * @return An ArrayList of FlightPath objects, each representing a move of the overall path.
+     */
     public ArrayList<FlightPath> convertAngleToFlightPath(String orderNo, ArrayList<Double> angles) {
         ArrayList<FlightPath> flightPath = new ArrayList<>();
         LngLat fromLngLat = START_POSITION;
         LngLat toLngLat;
 
         // For every angle in the list, calculate the next position and create a flight path object.
-        for (Double angle: angles) {
+        for (Double angle : angles) {
             // A hover move will not move horizontally, so the next position is the same as the current position.
             toLngLat = angle == 999 ? fromLngLat : lngLatHandler.nextPosition(fromLngLat, angle);
 
@@ -79,6 +94,13 @@ public class FlightDataHandler {
         return flightPath;
     }
 
+    /**
+     * Converts a list of angles into a list of LngLat classes for a given order.
+     * Each class represents a move from one point to the next at a specified angle.
+     *
+     * @param angles The list of angles representing the flight path, obtained from {@link #calculateAngles}.
+     * @return An ArrayList of LngLat objects, each representing a coordinate of the overall path.
+     */
     public ArrayList<LngLat> convertAngleToList(ArrayList<Double> angles) {
         ArrayList<LngLat> flightList = new ArrayList<>();
         LngLat fromLngLat = START_POSITION;
@@ -86,7 +108,7 @@ public class FlightDataHandler {
 
         flightList.add(fromLngLat);
 
-        for (Double angle: angles) {
+        for (Double angle : angles) {
             toLngLat = angle == 999 ? fromLngLat : lngLatHandler.nextPosition(fromLngLat, angle);
 
             flightList.add(toLngLat);
@@ -94,6 +116,14 @@ public class FlightDataHandler {
         }
         return flightList;
     }
+
+    /**
+     * Reverses a given list of angles, mirroring the path.
+     * This is used by {@link #calculateAngles} to calculate the return journey of a drone.
+     *
+     * @param angles The original list of angles.
+     * @return An ArrayList of angles representing the reversed path.
+     */
     private ArrayList<Double> reverseAngles(ArrayList<Double> angles) {
         ArrayList<Double> reversed_angles = new ArrayList<>();
 

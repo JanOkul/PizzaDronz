@@ -9,7 +9,9 @@ import uk.ac.ed.inf.ilp.data.NamedRegion;
 
 import java.net.URL;
 
-
+/**
+ * Retrieves input data from a REST Sever.
+ */
 public class RetrieveRestData {
 
     public RetrieveRestData() {
