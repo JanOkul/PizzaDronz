@@ -102,7 +102,17 @@ public class PathGenerator {
     protected ArrayList<Double> createFlightAngles(LngLat startPosition, LngLat endPosition, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
         PriorityQueue<Move> openSet = new PriorityQueue<>(Comparator.comparingDouble(Move::getFScore));
         Set<LngLat> closedSet = new HashSet<>();
-        Move start = new Move(startPosition, null, 0, hScore(startPosition, endPosition), 0);
+
+        double startingHScore = hScore(startPosition, endPosition);
+
+        /* For all other cases, the algorithm will handle the NaN case by removing it from the neighbours.
+            However, if the starting, or end position is NaN, then there is no valid path.
+         */
+        if (Double.isNaN(startingHScore)) {
+            throw new ArithmeticException("Starting or End position is illegal: " + startPosition + ", " + endPosition);
+        }
+
+        Move start = new Move(startPosition, null, 0, startingHScore, 0);
         leftCentralRegion = false;
 
         openSet.add(start);
@@ -120,7 +130,7 @@ public class PathGenerator {
             // Add current location to closed set to avoid reprocessing it.
             closedSet.add(current.getPosition());
 
-            ArrayList<Move> neighbours = getNeighbours(current, new Move(endPosition, null, 0, 0, 0), noFlyZones, centralRegion);
+            ArrayList<Move> neighbours = getNeighbours(current, endPosition, noFlyZones, centralRegion);
             for (Move neighbour : neighbours) {
                 // Skip processing if this neighbour has already been evaluated.
                 if (closedSet.contains(neighbour.getPosition())) {
@@ -133,7 +143,7 @@ public class PathGenerator {
         }
 
         // Return an empty path if no path is found.
-        return null;
+        return new ArrayList<>();
     }
 
 
@@ -145,7 +155,12 @@ public class PathGenerator {
      * @return The heuristic score based on the distance.
      */
     private double hScore(LngLat position, LngLat endPosition) {
-        return lngLatHandler.distanceTo(position, endPosition);
+        try {
+            return lngLatHandler.distanceTo(position, endPosition);
+        } catch (NullPointerException e) {
+            System.err.println("PathGenerator - hScore: NaN distance for " + position + " or " + endPosition);
+            return Double.NaN;
+        }
     }
 
     /**
@@ -156,7 +171,12 @@ public class PathGenerator {
      * @return The actual score based on the distance between the positions.
      */
     private double gScore(LngLat position, LngLat nextPosition) {
-        return lngLatHandler.distanceTo(position, nextPosition);
+        try {
+            return lngLatHandler.distanceTo(position, nextPosition);
+        } catch (NullPointerException e) {
+            System.err.println("PathGenerator - gScore: NaN distance for " + position + " or " + nextPosition);
+            return Double.NaN;
+        }
     }
 
     /**
@@ -170,7 +190,7 @@ public class PathGenerator {
      * @param centralRegion The central region.
      * @return A list of possible neighboring moves.
      */
-    private ArrayList<Move> getNeighbours(Move position, Move endPosition, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
+    private ArrayList<Move> getNeighbours(Move position, LngLat endPosition, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
         ArrayList<Move> neighbours = new ArrayList<>();
 
         for (double direction : DIRECTIONS) {
@@ -183,7 +203,13 @@ public class PathGenerator {
             }
 
             double gScore = gScore(currentPosition, potentialNextPosition);
-            double hScore = hScore(potentialNextPosition, endPosition.getPosition());
+            double hScore = hScore(potentialNextPosition, endPosition);
+
+            if (Double.isNaN(gScore) || Double.isNaN(hScore)) {
+                System.err.println("PathGenerator - getNeighbours: NaN score for " + currentPosition + " or " +
+                        potentialNextPosition+ " Skipping neighbour...");
+                continue;
+            }
 
             neighbours.add(new Move(potentialNextPosition, position, gScore, hScore, direction));
         }
@@ -201,6 +227,11 @@ public class PathGenerator {
      * @return true if the move is legal, false otherwise.
      */
     private boolean legalMove(LngLat currentPosition, LngLat potentialPosition, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
+
+        if (potentialPosition == null) {
+            return false;
+        }
+
         for (NamedRegion noFlyZone : noFlyZones) {
             if (lngLatHandler.isInRegion(potentialPosition, noFlyZone)) {
                 return false;
@@ -209,6 +240,7 @@ public class PathGenerator {
 
         boolean currentlyInCentral = lngLatHandler.isInRegion(currentPosition, centralRegion);
         boolean potentiallyInCentral = lngLatHandler.isInRegion(potentialPosition, centralRegion);
+
 
         /*
             Return false if the move is currently in central,

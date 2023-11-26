@@ -14,6 +14,7 @@ import uk.ac.ed.inf.ilp.data.NamedRegion;
 import uk.ac.ed.inf.ilp.data.Order;
 import uk.ac.ed.inf.ilp.data.Restaurant;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -41,25 +42,37 @@ public class App {
             for (String arg : args) {
                 argsAsString.append(arg).append(" ");
             }
-            System.err.println("Expected 2 arguments: API URL, Date (YYYY-MM-DD), received " + args.length + " arguments: " + argsAsString);
+            System.err.println("Expected 2 arguments: API URL, Date (YYYY-MM-DD), received " + args.length
+                    + " arguments: " + argsAsString + "\nexiting...");
             System.exit(1);
         }
 
         // Define arguments
         String apiUrl = args[0];
-        LocalDate date = null;  // Null pointer exception is not a concern as the program will terminate if invalid date.
+        LocalDate date = null;
         try {
             date = LocalDate.parse(args[1]);
         } catch (DateTimeParseException e) {
-            System.err.println("Date is not in the correct format, needs to be \"YYYY-MM-DD\". ");
+            System.err.println("Date is not in the correct format, needs to be \"YYYY-MM-DD\". " + "\nexiting...");
             System.exit(1);
         }
 
         // Retrieve data from REST API
-        Order[] orders = retrieve_data.retrieveData(apiUrl, "orders/" + date, Order.class);
-        Restaurant[] restaurants = retrieve_data.retrieveData(apiUrl, "restaurants", Restaurant.class);
-        NamedRegion[] noFlyZones = retrieve_data.retrieveData(apiUrl, "noFlyZones", NamedRegion.class);
-        NamedRegion centralArea = retrieve_data.retrieveCentralArea(apiUrl, "centralArea");
+        Order[] orders;
+        Restaurant[] restaurants;
+        NamedRegion[] noFlyZones;
+        NamedRegion centralArea;
+
+        try {
+            orders = retrieve_data.retrieveData(apiUrl, "orders/" + date, Order.class);
+            restaurants = retrieve_data.retrieveData(apiUrl, "restaurants", Restaurant.class);
+            noFlyZones = retrieve_data.retrieveData(apiUrl, "noFlyZones", NamedRegion.class);
+            centralArea = retrieve_data.retrieveCentralArea(apiUrl, "centralArea");
+        } catch (IOException e) {
+            System.err.println("Failed to retrieve data from REST API, " + e + " exiting...");
+            System.exit(1);
+            return;
+        }
 
         // ArrayLists for flight data.
         ArrayList<FlightPath> flightPaths = new ArrayList<>();  // Flight paths in the json output class.
@@ -68,7 +81,12 @@ public class App {
 
         // Main loop of operation for each order.
         for (Order order : orders) {
-            validator.validateOrder(order, restaurants);
+            try {
+                validator.validateOrder(order, restaurants);
+            } catch (NullPointerException e) {
+                System.err.println("Main: Order or restaurants are null, skipping order...");
+                continue;
+            }
 
             boolean order_status_valid = order.getOrderStatus() == OrderStatus.VALID_BUT_NOT_DELIVERED;
             boolean order_code_valid = order.getOrderValidationCode() == OrderValidationCode.NO_ERROR;
@@ -78,10 +96,10 @@ public class App {
                 angles = flightDataHandler.calculateAngles(order, restaurants, noFlyZones, centralArea);
 
                 // If there is an error with finding a path, continue to next order.
-                if (angles == null) {
+                if (angles == null || angles.isEmpty()) {
+                    System.err.println("Main: No path found for order: " + order.getOrderNo() + "\nskipping order...");
                     continue;
                 }
-
                 order.setOrderStatus(OrderStatus.DELIVERED);
 
                 // Adds data into arraylists for their output type.
@@ -92,10 +110,6 @@ public class App {
         }
 
         // Output flight path to file
-        OutputToFile output = new OutputToFile();
-        output.outputDeliveries(orders, date);
-        output.outputFlightPaths(flightPaths, date);
-
         // Create GeoJson
         Geometry geometry = new Geometry();
 
@@ -112,7 +126,16 @@ public class App {
         FeatureCollection featureCollection = new FeatureCollection();
         featureCollection.addFeature(feature);
 
-        // Writes the geo-json to file.
-        output.outputGeoJson(featureCollection, date);
+        // Tries to output all the data.
+        OutputToFile output = new OutputToFile();
+        try {
+            output.outputDeliveries(orders, date);
+            output.outputFlightPaths(flightPaths, date);
+            output.outputGeoJson(featureCollection, date);
+        } catch (IOException e) {
+            System.err.println("Main: Failed to output deliveries or flight paths, " + e + " exiting...");
+            System.exit(1);
+        }
     }
+
 }

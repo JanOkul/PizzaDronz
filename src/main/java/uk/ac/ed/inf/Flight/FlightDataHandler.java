@@ -15,7 +15,7 @@ import java.util.List;
  */
 public class FlightDataHandler {
     private final LngLatHandler lngLatHandler = new LngLatHandler();
-    private final LngLat START_POSITION = new LngLat((-3.186874), 55.944494);  // Appleton Tower.
+    private final LngLat START_POSITION = new LngLat(-3.186874, 55.944494);  // Appleton Tower.
 
     public FlightDataHandler() {
     }
@@ -33,6 +33,14 @@ public class FlightDataHandler {
      * can be found or if the restaurant is not found.
      */
     public ArrayList<Double> calculateAngles(Order order, Restaurant[] restaurants, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
+        // Checks if any of the parameters are null.
+        if (order == null || restaurants == null || noFlyZones == null || centralRegion == null) {
+            System.err.println("FlightDataHandler - calculateAngles: retrieved null argument in + " + order + ", " +
+                    Arrays.toString(restaurants) + ", " + Arrays.toString(noFlyZones) + ", " + centralRegion
+                    + "\nreturning empty...");
+            return new ArrayList<>();    // Handled in main class.
+        }
+
         // Find restaurant position.
         Pizza targetPizza = order.getPizzasInOrder()[0];   // All pizzas come from the same restaurant.
         LngLat restaurantLocation = null;
@@ -46,17 +54,17 @@ public class FlightDataHandler {
             }
         }
 
-        // Skips order if restaurant is not found, however this should not be possible.
+        // If the restaurant is not found, return null such that main function can skip this order.
         if (restaurantLocation == null) {
-            return null;
+            return new ArrayList<>();
         }
 
         // The anglePath is the list of angles, set it initially as the forward path.
         ArrayList<Double> anglePath = new PathGenerator().createFlightAngles(START_POSITION, restaurantLocation, noFlyZones, centralRegion);
 
         // If a path is not found, return null such that main function can skip this order.
-        if (anglePath == null) {
-            return null;
+        if (anglePath == null || anglePath.isEmpty()) {
+            return new ArrayList<>();
         }
 
         // From restaurant to customer, since each move is constant distance, angles can be reversed.

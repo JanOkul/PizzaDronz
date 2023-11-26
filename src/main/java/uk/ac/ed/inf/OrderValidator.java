@@ -33,12 +33,11 @@ public class OrderValidator implements OrderValidation {
     public Order validateOrder(Order orderToValidate, Restaurant[] definedRestaurants) {
 
         if (orderToValidate == null) {
-            return null;    // Handled in a main class.
+            throw new NullPointerException("OrderValidator - validateOrder: Order to validate is null");    // Handled in main class.
         }
 
         if (definedRestaurants == null) {
-            System.err.println("Order validation: defined restaurants is null");
-            System.exit(1);
+            throw new NullPointerException("OrderValidator - validateOrder: Defined restaurants are null");    // Handled in main class.
         }
 
         // -------------------- PIZZA CHECKS --------------------
@@ -180,8 +179,15 @@ public class OrderValidator implements OrderValidation {
         // ---------- Checks if card is not expired ----------
         String[] expiryDateString = creditCardInfo.getCreditCardExpiry().split("/");
         LocalDate expiryDate;
-        int expiryMonth = Integer.parseInt(expiryDateString[0]);
-        int expiryYear = Integer.parseInt(expiryDateString[1]) + 2000;
+        int expiryMonth, expiryYear;
+        try {
+            expiryMonth = Integer.parseInt(expiryDateString[0]);
+            expiryYear = Integer.parseInt(expiryDateString[1]) + 2000;
+        } catch (NumberFormatException e) {
+            orderToValidate.setOrderStatus(OrderStatus.INVALID);
+            orderToValidate.setOrderValidationCode(OrderValidationCode.EXPIRY_DATE_INVALID);
+            return orderToValidate;
+        }
         // Converts integers into LocalDate of the last day of expiry month.
 
         try {

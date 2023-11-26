@@ -7,6 +7,7 @@ import uk.ac.ed.inf.OutputClasses.FlightPath;
 import uk.ac.ed.inf.ilp.data.Order;
 
 import java.io.File;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 
@@ -22,7 +23,7 @@ public class OutputToFile {
      * @param orders An ar array of the orders that were processed.
      * @param date   The given date the orders were made.
      */
-    public void outputDeliveries(Order[] orders, LocalDate date) {
+    public void outputDeliveries(Order[] orders, LocalDate date) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         Delivery[] deliveries = new Delivery[orders.length];
 
@@ -36,8 +37,7 @@ public class OutputToFile {
         try {
             mapper.writeValue(new File("deliveries-" + date.toString() + ".json"), deliveries);
         } catch (Exception e) {
-            System.err.println("OutputToFile: Failed to write deliveries to file: " + e);
-            System.exit(1);
+            throw new IOException("OutputToFile - outputDeliveries: Failed to write deliveries to file: ");
         }
     }
 
@@ -47,15 +47,14 @@ public class OutputToFile {
      * @param flightPaths An ArrayList of the FlightPath class that stores each move.
      * @param date        The date the orders was made on.
      */
-    public void outputFlightPaths(ArrayList<FlightPath> flightPaths, LocalDate date) {
+    public void outputFlightPaths(ArrayList<FlightPath> flightPaths, LocalDate date) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
 
         // Tries to write flight paths to a JSON file.
         try {
             mapper.writeValue(new File("flightpath-" + date.toString() + ".json"), flightPaths);
         } catch (Exception e) {
-            System.err.println("OutputToFile: Failed to write flight paths to file: " + e);
-            System.exit(1);
+            throw new IOException("OutputToFile - outputFlightPaths: Failed to write flight paths to file: ");
         }
     }
 
@@ -65,15 +64,14 @@ public class OutputToFile {
      * @param featureCollection The Feature Collection that holds all the coordinates.
      * @param date              The date the orders were made on.
      */
-    public void outputGeoJson(FeatureCollection featureCollection, LocalDate date) {
+    public void outputGeoJson(FeatureCollection featureCollection, LocalDate date) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
 
         // Tries to write Feature Collection to a GEO JSON.
         try {
             mapper.writeValue(new File("drone-" + date.toString() + ".geojson"), featureCollection);
         } catch (Exception e) {
-            System.err.println("OutputToFile: Failed to write flight paths to file: " + e);
-            System.exit(1);
+            throw new IOException("OutputToFile - outputGeoJson: Failed to write flight paths to file: " + e);
         }
     }
 

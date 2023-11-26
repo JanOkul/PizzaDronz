@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import uk.ac.ed.inf.ilp.data.NamedRegion;
 
+import java.io.IOException;
 import java.net.URL;
 
 /**
@@ -26,8 +27,8 @@ public class RetrieveRestData {
      * @param <T>       Generic type as the procedure for getting data is the same for Order/Restaurant/NoFlyZone.
      * @return An array of REST API data.
      */
-    public <T> T[] retrieveData(String apiUrl, String urlPath, Class<T> dataClass) {
-        T[] data = null;
+    public <T> T[] retrieveData(String apiUrl, String urlPath, Class<T> dataClass) throws IOException {
+        T[] data;
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
@@ -42,17 +43,11 @@ public class RetrieveRestData {
             JavaType type = TypeFactory.defaultInstance().constructArrayType(dataClass);    // Creates an array type of the data class.
             data = objectMapper.readValue(url, type);
         } catch (Exception e) {
-            System.err.println("RetrieveRestData: Failed to obtain REST data for: " + dataClass);
-            System.err.println("RetrieveRestData: The error that occurred is: " + e);
-            System.exit(1);
-        }
-
-        if (data == null) {
-            System.err.println("RetrieveRestData: Data is null for: " + dataClass);
-            System.exit(1);
-        }
+            throw new IOException("RetrieveRestData: Failed to obtain REST data for: " + dataClass);
+            }
 
         return data;
+
     }
 
     /**
@@ -61,8 +56,8 @@ public class RetrieveRestData {
      * @param apiUrl The URL of the Rest API.
      * @return The central area.
      */
-    public NamedRegion retrieveCentralArea(String apiUrl, String extension) {
-        NamedRegion centralArea = null;
+    public NamedRegion retrieveCentralArea(String apiUrl, String extension) throws IOException {
+        NamedRegion centralArea;
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
@@ -77,15 +72,10 @@ public class RetrieveRestData {
             URL url = new URL(apiUrl + extension);
             centralArea = objectMapper.readValue(url, NamedRegion.class);
         } catch (Exception e) {
-            System.err.println("RetrieveRestData: Failed to obtain REST data for: " + NamedRegion.class);
-            System.err.println("RetrieveRestData: The error that occurred is: " + e);
-            System.exit(1);
+            throw new IOException("RetrieveRestData: Failed to obtain REST data for: " + NamedRegion.class);
+
         }
 
-        if (centralArea == null) {
-            System.err.println("RetrieveRestData: Data is null for: " + NamedRegion.class);
-            System.exit(1);
-        }
         return centralArea;
     }
 }

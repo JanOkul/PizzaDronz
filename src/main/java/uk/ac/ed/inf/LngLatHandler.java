@@ -21,13 +21,27 @@ public class LngLatHandler implements LngLatHandling {
      * @return The distance between the two points in degrees.
      */
     public double distanceTo(LngLat startPosition, LngLat endPosition) {
-        double x1, x2, y1, y2, distance;
-        x1 = startPosition.lng();
-        y1 = startPosition.lat();
-        x2 = endPosition.lng();
-        y2 = endPosition.lat();
+        double lng1, lng2, lat1, lat2, distance;
+        lng1 = startPosition.lng();
+        lat1 = startPosition.lat();
+        lng2 = endPosition.lng();
+        lat2 = endPosition.lat();
+
+        boolean lng1Valid = (lng1 <= 180.0) && (lng1 >= -180.0);
+        boolean lng2Valid = (lng2 <= 180.0) && (lng2 >= -180.0);
+        boolean lat1Valid = (lat1 <= 90.0) && (lat1 >= -90.0);
+        boolean lat2Valid = (lat2 <= 90.0) && (lat2 >= -90.0);
+
+        // Check if the longitude and latitude values are valid
+        if (!(lng1Valid && lng2Valid && lat1Valid && lat2Valid)) {
+            System.err.println("LngLatHandler - distanceTo: Invalid longitude and latitude values in: " + startPosition
+                    + " or " + endPosition + "\nreturning NaN...");
+
+            return Double.NaN;
+        }
+
         // Distance Formula
-        distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        distance = Math.sqrt(Math.pow(lng2 - lng1, 2) + Math.pow(lat2 - lat1, 2));
         return distance;
     }
 
@@ -53,23 +67,22 @@ public class LngLatHandler implements LngLatHandling {
     public boolean isInRegion(LngLat point, NamedRegion region) {
         boolean isInside = false;
         LngLat[] vertices = region.vertices();
-        int verticesLength = vertices.length;
+        int numVertices = vertices.length;
 
-        for (int i = 0, j = verticesLength - 1; i < verticesLength; j = i++) {
-            LngLat vertex1 = vertices[i];
-            LngLat vertex2 = vertices[j];
+        // If point is on corner of region, return true.
+        for (LngLat vertex : vertices) {
+            if (point.lat() == vertex.lat() && point.lng() == vertex.lng()) {
+                return true;
+            }
+        }
 
-            // Check if the point's latitude is between the latitudes of the edge's vertices
-            boolean isBetweenLatitudes = (vertex1.lat() > point.lat()) != (vertex2.lat() > point.lat());
+        for (int i = 0, j = numVertices - 1; i < numVertices; j = i++) {
+            LngLat v1 = vertices[i];
+            LngLat v2 = vertices[j];
 
-            // Check if the point's longitude is to the left of the edge
-            if (isBetweenLatitudes) {
-                double edgeSlope = (vertex2.lng() - vertex1.lng()) / (vertex2.lat() - vertex1.lat());
-                double intersectLng = vertex1.lng() + (point.lat() - vertex1.lat()) * edgeSlope;
-
-                if (point.lng() < intersectLng) {
-                    isInside = !isInside;
-                }
+            if (((v1.lat() > point.lat()) != (v2.lat() > point.lat())) &&
+                    (point.lng() < (v2.lng() - v1.lng()) * (point.lat() - v1.lat()) / (v2.lat() - v1.lat()) + v1.lng())) {
+                isInside = !isInside;
             }
         }
 
@@ -85,15 +98,24 @@ public class LngLatHandler implements LngLatHandling {
      * @return The next position as longitude and latitude.
      */
     public LngLat nextPosition(LngLat startPosition, double angle) {
-        double x1, x2, y1, y2;
-        x1 = startPosition.lng();
-        y1 = startPosition.lat();
+        double lng1, lng2, lat1, lat2;
+        lng1 = startPosition.lng();
+        lat1 = startPosition.lat();
         angle = Math.toRadians(angle);  // Java sin and cos only take radians.
 
+        boolean validLng = (lng1 <= 180.0) && (lng1 >= -180.0);
+        boolean validLat = (lat1 <= 90.0) && (lat1 >= -90.0);
+
+        // Check if the longitude and latitude values are valid
+        if (!(validLng && validLat)) {
+            throw new IllegalArgumentException("LngLatHandler - nextPosition: Invalid longitude and " +
+                    "latitude values in: " + startPosition);
+        }
+
         // Calculates new x and y positions.
-        x2 = x1 + (SystemConstants.DRONE_MOVE_DISTANCE * Math.cos(angle));
-        y2 = y1 + (SystemConstants.DRONE_MOVE_DISTANCE * Math.sin(angle));
-        return new LngLat(x2, y2);
+        lng2 = lng1 + (SystemConstants.DRONE_MOVE_DISTANCE * Math.cos(angle));
+        lat2 = lat1 + (SystemConstants.DRONE_MOVE_DISTANCE * Math.sin(angle));
+        return new LngLat(lng2, lat2);
     }
 
 }
