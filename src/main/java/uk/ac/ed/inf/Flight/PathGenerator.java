@@ -101,11 +101,12 @@ public class PathGenerator {
      */
     protected ArrayList<Double> createFlightAngles(LngLat startPosition, LngLat endPosition, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
         PriorityQueue<Move> openSet = new PriorityQueue<>(Comparator.comparingDouble(Move::getFScore));
-        Set<LngLat> closedSet = new HashSet<>();
+        Set<Move> closedSet = new HashSet<>();
 
         double startingHScore = hScore(startPosition, endPosition);
 
-        /* For all other cases, the algorithm will handle the NaN case by removing it from the neighbours.
+        /*
+            For all other cases, the algorithm will handle the NaN case by removing it from the neighbours.
             However, if the starting, or end position is NaN, then there is no valid path.
          */
         if (Double.isNaN(startingHScore)) {
@@ -118,8 +119,7 @@ public class PathGenerator {
         openSet.add(start);
 
         while (!openSet.isEmpty()) {
-            Move current = openSet.poll();
-
+            Move current = openSet.poll();  // Gets the move that is "closest" to the end position.
             canDroneLeaveCentral(centralRegion, current.getPosition());
 
             // If current location is close to the end position, reconstruct and return the path.
@@ -127,17 +127,17 @@ public class PathGenerator {
                 return reconstructPath(current);
             }
 
-            // Add current location to closed set to avoid reprocessing it.
-            closedSet.add(current.getPosition());
+            // Add current location to closed set to avoid checking it.
+            closedSet.add(current);
 
             ArrayList<Move> neighbours = getNeighbours(current, endPosition, noFlyZones, centralRegion);
             for (Move neighbour : neighbours) {
-                // Skip processing if this neighbour has already been evaluated.
-                if (closedSet.contains(neighbour.getPosition())) {
+                // Skip if this neighbour has already been evaluated.
+                if (closedSet.contains(neighbour)) {
                     continue;
                 }
 
-                // Add neighbour to open set for evaluation.
+                // Add neighbour to open set for next loop.
                 openSet.add(neighbour);
             }
         }
@@ -157,7 +157,7 @@ public class PathGenerator {
     private double hScore(LngLat position, LngLat endPosition) {
         try {
             return lngLatHandler.distanceTo(position, endPosition);
-        } catch (NullPointerException e) {
+        } catch (NullPointerException e) {  // Catches any invalid LngLat values.
             System.err.println("PathGenerator - hScore: NaN distance for " + position + " or " + endPosition);
             return Double.NaN;
         }
@@ -173,7 +173,7 @@ public class PathGenerator {
     private double gScore(LngLat position, LngLat nextPosition) {
         try {
             return lngLatHandler.distanceTo(position, nextPosition);
-        } catch (NullPointerException e) {
+        } catch (NullPointerException e) {  // Catches any invalid LngLat values.
             System.err.println("PathGenerator - gScore: NaN distance for " + position + " or " + nextPosition);
             return Double.NaN;
         }
@@ -193,11 +193,12 @@ public class PathGenerator {
     private ArrayList<Move> getNeighbours(Move position, LngLat endPosition, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
         ArrayList<Move> neighbours = new ArrayList<>();
 
+        // Get a neighbour for all directions
         for (double direction : DIRECTIONS) {
             LngLat currentPosition = position.getPosition();
             LngLat potentialNextPosition = lngLatHandler.nextPosition(currentPosition, direction);
 
-
+            // Don't add the neighbour if it is not a legal move.
             if (!legalMove(currentPosition, potentialNextPosition, noFlyZones, centralRegion)) {
                 continue;
             }
@@ -205,6 +206,7 @@ public class PathGenerator {
             double gScore = gScore(currentPosition, potentialNextPosition);
             double hScore = hScore(potentialNextPosition, endPosition);
 
+            // If this condition evaluates to true, then there was an invalid LnLat value.
             if (Double.isNaN(gScore) || Double.isNaN(hScore)) {
                 System.err.println("PathGenerator - getNeighbours: NaN score for " + currentPosition + " or " +
                         potentialNextPosition+ " Skipping neighbour...");
@@ -228,25 +230,19 @@ public class PathGenerator {
      */
     private boolean legalMove(LngLat currentPosition, LngLat potentialPosition, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
 
-        if (potentialPosition == null) {
-            return false;
-        }
-
+        // Check if the move may be in a no-fly zone.
         for (NamedRegion noFlyZone : noFlyZones) {
             if (lngLatHandler.isInRegion(potentialPosition, noFlyZone)) {
                 return false;
             }
         }
-
-        boolean currentlyInCentral = lngLatHandler.isInRegion(currentPosition, centralRegion);
-        boolean potentiallyInCentral = lngLatHandler.isInRegion(potentialPosition, centralRegion);
-
-
         /*
             Return false if the move is currently in central,
             will not be in central, and has already left the central zone,
             true otherwise.
          */
+        boolean currentlyInCentral = lngLatHandler.isInRegion(currentPosition, centralRegion);
+        boolean potentiallyInCentral = lngLatHandler.isInRegion(potentialPosition, centralRegion);
         return !currentlyInCentral || potentiallyInCentral || !leftCentralRegion;
     }
 
@@ -259,10 +255,13 @@ public class PathGenerator {
      */
     private ArrayList<Double> reconstructPath(Move current) {
         ArrayList<Double> path = new ArrayList<>();
+
+        // Add the angle of the current Move until it reaches the starting move which was defined as null.
         while (current.getCameFrom() != null) {
             path.add(current.getAngle());
             current = current.getCameFrom();
         }
+        // Reverse the path as the loop starts from the end position.
         Collections.reverse(path);
         return path;
     }
@@ -275,6 +274,7 @@ public class PathGenerator {
      * @param dronePosition The current position of the drone.
      */
     private void canDroneLeaveCentral(NamedRegion centralRegion, LngLat dronePosition) {
+        // No need to check if the drone has left central.
         if (!leftCentralRegion && !lngLatHandler.isInRegion(dronePosition, centralRegion)) {
             leftCentralRegion = true;
         }

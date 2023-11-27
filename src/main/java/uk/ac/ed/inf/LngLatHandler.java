@@ -65,7 +65,7 @@ public class LngLatHandler implements LngLatHandling {
      * @return True if the point is in the region, false otherwise.
      */
     public boolean isInRegion(LngLat point, NamedRegion region) {
-        boolean isInside = false;
+        int intersections = 0;
         LngLat[] vertices = region.vertices();
         int numVertices = vertices.length;
 
@@ -76,17 +76,24 @@ public class LngLatHandler implements LngLatHandling {
             }
         }
 
-        for (int i = 0, j = numVertices - 1; i < numVertices; j = i++) {
+        // Ray casting algorithm.
+        int j = numVertices - 1;
+        // For each side in region.
+        for (int i = 0; i < numVertices; i++) {
+            // One side
             LngLat v1 = vertices[i];
             LngLat v2 = vertices[j];
 
-            if (((v1.lat() > point.lat()) != (v2.lat() > point.lat())) &&
-                    (point.lng() < (v2.lng() - v1.lng()) * (point.lat() - v1.lat()) / (v2.lat() - v1.lat()) + v1.lng())) {
-                isInside = !isInside;
+            boolean isPointHigherThanSide = ((v1.lat() > point.lat()) != (v2.lat() > point.lat()));
+            boolean isPointLeftOfSide = (point.lng() < (v2.lng() - v1.lng()) * (point.lat() - v1.lat()) / (v2.lat() - v1.lat()) + v1.lng());
+
+            if (isPointHigherThanSide && isPointLeftOfSide) {
+                intersections++;
             }
+            j = i;
         }
 
-        return isInside;
+        return intersections % 2 != 0;
     }
 
 
