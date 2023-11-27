@@ -34,7 +34,7 @@ public class AppTest
     }
 
     /**
-     * Rigourous Test :-)
+     * Tests that the app runs normally
      */
     public void testAppDoesNotCrash() {
         String url = "https://ilp-rest.azurewebsites.net";
@@ -43,7 +43,7 @@ public class AppTest
         try {
             App.main(new String[]{url, date});
         } catch (Exception e) {
-            fail("App crashed");
+            fail("App failed to run normally");
         }
     }
 }
