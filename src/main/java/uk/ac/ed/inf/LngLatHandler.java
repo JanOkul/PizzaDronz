@@ -5,6 +5,9 @@ import uk.ac.ed.inf.ilp.data.NamedRegion;
 import uk.ac.ed.inf.ilp.constant.*;
 import uk.ac.ed.inf.ilp.interfaces.LngLatHandling;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 /**
  * Performs important operations with the LngLat class for finding the flight path of the drone.
  */
@@ -22,27 +25,22 @@ public class LngLatHandler implements LngLatHandling {
      */
     public double distanceTo(LngLat startPosition, LngLat endPosition) {
         double lng1, lng2, lat1, lat2, distance;
+        // If the position is ever greater, flip to the other side of the world.
         lng1 = startPosition.lng();
-        lat1 = startPosition.lat();
         lng2 = endPosition.lng();
+        lat1 = startPosition.lat();
         lat2 = endPosition.lat();
-
-        boolean lng1Valid = (lng1 <= 180.0) && (lng1 >= -180.0);
-        boolean lng2Valid = (lng2 <= 180.0) && (lng2 >= -180.0);
-        boolean lat1Valid = (lat1 <= 90.0) && (lat1 >= -90.0);
-        boolean lat2Valid = (lat2 <= 90.0) && (lat2 >= -90.0);
-
-        // Check if the longitude and latitude values are valid
-        if (!(lng1Valid && lng2Valid && lat1Valid && lat2Valid)) {
-            System.err.println("LngLatHandler - distanceTo: Invalid longitude and latitude values in: " + startPosition
-                    + " or " + endPosition + "\nreturning NaN...");
-
-            return Double.NaN;
-        }
 
         // Distance Formula
         distance = Math.sqrt(Math.pow(lng2 - lng1, 2) + Math.pow(lat2 - lat1, 2));
-        return distance;
+        /*
+            Due to how doubles work, if the is distance to is just at 1.5e-4 the distance will be 1.4999999999999998
+            which is not equal to 1.5e-4. This causes isCloseTo to return true instead of false. So we round to 5
+            places.
+         */
+        BigDecimal bd = new BigDecimal(distance);
+        bd = bd.setScale(5, RoundingMode.HALF_UP);
+        return bd.doubleValue();
     }
 
     /**
@@ -109,15 +107,6 @@ public class LngLatHandler implements LngLatHandling {
         lng1 = startPosition.lng();
         lat1 = startPosition.lat();
         angle = Math.toRadians(angle);  // Java sin and cos only take radians.
-
-        boolean validLng = (lng1 <= 180.0) && (lng1 >= -180.0);
-        boolean validLat = (lat1 <= 90.0) && (lat1 >= -90.0);
-
-        // Check if the longitude and latitude values are valid
-        if (!(validLng && validLat)) {
-            throw new IllegalArgumentException("LngLatHandler - nextPosition: Invalid longitude and " +
-                    "latitude values in: " + startPosition);
-        }
 
         // Calculates new x and y positions.
         lng2 = lng1 + (SystemConstants.DRONE_MOVE_DISTANCE * Math.cos(angle));

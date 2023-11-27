@@ -104,21 +104,19 @@ public class PathGenerator {
         Set<Move> closedSet = new HashSet<>();
 
         double startingHScore = hScore(startPosition, endPosition);
-
-        /*
-            For all other cases, the algorithm will handle the NaN case by removing it from the neighbours.
-            However, if the starting, or end position is NaN, then there is no valid path.
-         */
-        if (Double.isNaN(startingHScore)) {
-            throw new ArithmeticException("Starting or End position is illegal: " + startPosition + ", " + endPosition);
-        }
+        int maxIterations = 150_000;
+        int noIterations = 0;
 
         Move start = new Move(startPosition, null, 0, startingHScore, 0);
         leftCentralRegion = false;
 
         openSet.add(start);
-
-        while (!openSet.isEmpty()) {
+        /*
+            While the open set is empty and the program has not iterated less than 150k iterations. The drone would've
+            moved just about 50 degrees of distance, roughly the distance between appleton and the equator. Therefore,
+            if the drone cannot find a path after 150k moves, it is likely that there is no path, so we quit the algorithm.
+         */
+        while (!openSet.isEmpty() && noIterations <= maxIterations) {
             Move current = openSet.poll();  // Gets the move that is "closest" to the end position.
             canDroneLeaveCentral(centralRegion, current.getPosition());
 
@@ -140,6 +138,7 @@ public class PathGenerator {
                 // Add neighbour to open set for next loop.
                 openSet.add(neighbour);
             }
+            noIterations++;
         }
 
         // Return an empty path if no path is found.
@@ -155,12 +154,7 @@ public class PathGenerator {
      * @return The heuristic score based on the distance.
      */
     private double hScore(LngLat position, LngLat endPosition) {
-        try {
             return lngLatHandler.distanceTo(position, endPosition);
-        } catch (NullPointerException e) {  // Catches any invalid LngLat values.
-            System.err.println("PathGenerator - hScore: NaN distance for " + position + " or " + endPosition);
-            return Double.NaN;
-        }
     }
 
     /**
@@ -171,12 +165,7 @@ public class PathGenerator {
      * @return The actual score based on the distance between the positions.
      */
     private double gScore(LngLat position, LngLat nextPosition) {
-        try {
             return lngLatHandler.distanceTo(position, nextPosition);
-        } catch (NullPointerException e) {  // Catches any invalid LngLat values.
-            System.err.println("PathGenerator - gScore: NaN distance for " + position + " or " + nextPosition);
-            return Double.NaN;
-        }
     }
 
     /**
@@ -205,13 +194,6 @@ public class PathGenerator {
 
             double gScore = gScore(currentPosition, potentialNextPosition);
             double hScore = hScore(potentialNextPosition, endPosition);
-
-            // If this condition evaluates to true, then there was an invalid LnLat value.
-            if (Double.isNaN(gScore) || Double.isNaN(hScore)) {
-                System.err.println("PathGenerator - getNeighbours: NaN score for " + currentPosition + " or " +
-                        potentialNextPosition+ " Skipping neighbour...");
-                continue;
-            }
 
             neighbours.add(new Move(potentialNextPosition, position, gScore, hScore, direction));
         }

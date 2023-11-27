@@ -1,52 +1,49 @@
 package uk.ac.ed.inf;
 
+import junit.framework.Test;
 import junit.framework.TestCase;
+import junit.framework.TestSuite;
+import uk.ac.ed.inf.Flight.FlightDataHandlerTest;
 
 import java.time.LocalDate;
 
 /**
  * Unit test for simple App.
  */
-public class AppTest 
-    extends TestCase
-{
-        public void testAppWorks()
-        {
-            String url = "https://ilp-rest.azurewebsites.net/";
-            try {
-                App.main(new String[]{url, LocalDate.now().toString()});
-            } catch (Exception e) {
-                fail("App failed to run");
-            }
+public class AppTest
+        extends TestCase {
+    /**
+     * Create the test case
+     *
+     * @param testName name of the test case
+     */
+    public AppTest(String testName) {
+        super(testName);
+    }
+
+    /**
+     * @return the suite of tests being tested
+     */
+    public static Test suite() {
+        TestSuite suite = new TestSuite();
+        suite.addTestSuite(AppTest.class);
+        suite.addTestSuite(LngLatHandlerTest.class);
+        suite.addTestSuite(OrderValidatorTest.class);
+        suite.addTestSuite(FlightDataHandlerTest.class);
+        return suite;
+    }
+
+    /**
+     * Rigourous Test :-)
+     */
+    public void testAppDoesNotCrash() {
+        String url = "https://ilp-rest.azurewebsites.net";
+        String date = LocalDate.now().toString();
+
+        try {
+            App.main(new String[]{url, date});
+        } catch (Exception e) {
+            fail("App crashed");
         }
-
-//        public void testAppFailsWithWrongUrl()
-//        {
-//            String url = "https//url.com";
-//            try {
-//                App.main(new String[]{url, LocalDate.now().toString()});
-//            } catch (Exception e) {
-//                fail("App created an Exception");
-//            }
-//        }
-//
-//        public void testAppFailsWithWrongDate()
-//        {
-//            String url = "https//url.com";
-//            try {
-//                App.main(new String[]{url, "A"});
-//            } catch (Exception e) {
-//                fail("App created an Exception");
-//            }
-//        }
-
-//        public void testAppFailsWithWrongNumberOfArguments()
-//        {
-//            String url = "https//url.com";
-//            try {
-//                App.main(new String[]{url});
-//            } catch (Exception e) {
-//                fail("App created an Exception");
-//            }
-//        }
+    }
 }
