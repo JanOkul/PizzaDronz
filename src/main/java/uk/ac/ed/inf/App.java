@@ -79,6 +79,7 @@ public class App {
         }
 
         // ArrayLists for flight data.
+        LngLat appletonTower = new LngLat(-3.186874, 55.944494);
         ArrayList<FlightPath> flightPaths = new ArrayList<>();  // Flight paths in the json output class.
         ArrayList<LngLat> lngLats = new ArrayList<>();  // Flight path in the LngLat class. (for geo-json)
         ArrayList<Double> angles;   // The angles the drone takes from move to move.
@@ -97,7 +98,7 @@ public class App {
 
             // Only get flight path of valid orders
             if (order_status_valid && order_code_valid) {
-                angles = flightDataHandler.calculateAngles(order, restaurants, noFlyZones, centralArea);
+                angles = flightDataHandler.calculateAngles(order, restaurants, noFlyZones, centralArea, appletonTower);
 
                 // If there is an error with finding a path, continue to next order.
                 if (angles == null || angles.isEmpty()) {
@@ -107,8 +108,8 @@ public class App {
                 order.setOrderStatus(OrderStatus.DELIVERED);
 
                 // Adds data into arraylists for their output type.
-                flightPaths.addAll(flightDataHandler.convertAngleToFlightPath(order.getOrderNo(), angles));
-                lngLats.addAll(flightDataHandler.convertAngleToList(angles));
+                flightPaths.addAll(flightDataHandler.convertAngleToFlightPath(order.getOrderNo(), angles, appletonTower));
+                lngLats.addAll(flightDataHandler.convertAngleToList(angles, appletonTower));
             }
 
         }

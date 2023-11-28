@@ -15,7 +15,6 @@ import java.util.List;
  */
 public class FlightDataHandler {
     private final LngLatHandler lngLatHandler = new LngLatHandler();
-    private final LngLat START_POSITION = new LngLat(-3.186874, 55.944494);  // Appleton Tower.
 
     public FlightDataHandler() {
     }
@@ -32,7 +31,7 @@ public class FlightDataHandler {
      * @return A list of angles representing the drone's path. Returns null if no path
      * can be found or if the restaurant is not found.
      */
-    public ArrayList<Double> calculateAngles(Order order, Restaurant[] restaurants, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
+    public ArrayList<Double> calculateAngles(Order order, Restaurant[] restaurants, NamedRegion[] noFlyZones, NamedRegion centralRegion, LngLat startPosition) {
         // Checks if any of the parameters are null.
         if (order == null || restaurants == null || noFlyZones == null || centralRegion == null) {
             System.err.println("FlightDataHandler - calculateAngles: retrieved null argument in + " + order + ", " +
@@ -60,7 +59,7 @@ public class FlightDataHandler {
         }
 
         // The anglePath is the list of angles, set it initially as the forward path.
-        ArrayList<Double> anglePath = new PathGenerator().createFlightAngles(START_POSITION, restaurantLocation, noFlyZones, centralRegion);
+        ArrayList<Double> anglePath = new PathGenerator().createFlightAngles(startPosition, restaurantLocation, noFlyZones, centralRegion);
 
         // If a path is not found, return null such that main function can skip this order.
         if (anglePath == null || anglePath.isEmpty()) {
@@ -86,9 +85,9 @@ public class FlightDataHandler {
      * @param angles  The list of angles representing the flight path, obtained from {@link #calculateAngles}.
      * @return An ArrayList of FlightPath objects, each representing a move of the overall path.
      */
-    public ArrayList<FlightPath> convertAngleToFlightPath(String orderNo, ArrayList<Double> angles) {
+    public ArrayList<FlightPath> convertAngleToFlightPath(String orderNo, ArrayList<Double> angles, LngLat startPosition) {
         ArrayList<FlightPath> flightPath = new ArrayList<>();
-        LngLat fromLngLat = START_POSITION;
+        LngLat fromLngLat = startPosition;
         LngLat toLngLat;
 
         // For every angle in the list, calculate the next position and create a flight path object.
@@ -109,9 +108,9 @@ public class FlightDataHandler {
      * @param angles The list of angles representing the flight path, obtained from {@link #calculateAngles}.
      * @return An ArrayList of LngLat objects, each representing a coordinate of the overall path.
      */
-    public ArrayList<LngLat> convertAngleToList(ArrayList<Double> angles) {
+    public ArrayList<LngLat> convertAngleToList(ArrayList<Double> angles, LngLat startPosition) {
         ArrayList<LngLat> flightList = new ArrayList<>();
-        LngLat fromLngLat = START_POSITION;
+        LngLat fromLngLat = startPosition;
         LngLat toLngLat;
 
         flightList.add(fromLngLat);
@@ -137,7 +136,7 @@ public class FlightDataHandler {
 
         // Does a 180 degree flip for each angle
         for (double angle : angles) {
-            reversed_angles.add(angle + 180);
+            reversed_angles.add((angle + 180) % 360);
         }
         // Reverses the order.
         Collections.reverse(reversed_angles);
