@@ -1,18 +1,10 @@
 package uk.ac.ed.inf;
 
-import uk.ac.ed.inf.Flight.FlightDataHandler;
-import uk.ac.ed.inf.IO.OutputToFile;
-import uk.ac.ed.inf.IO.RetrieveRestData;
-import uk.ac.ed.inf.OutputClasses.Feature;
-import uk.ac.ed.inf.OutputClasses.FeatureCollection;
-import uk.ac.ed.inf.OutputClasses.FlightPath;
-import uk.ac.ed.inf.OutputClasses.Geometry;
-import uk.ac.ed.inf.ilp.constant.OrderStatus;
-import uk.ac.ed.inf.ilp.constant.OrderValidationCode;
-import uk.ac.ed.inf.ilp.data.LngLat;
-import uk.ac.ed.inf.ilp.data.NamedRegion;
-import uk.ac.ed.inf.ilp.data.Order;
-import uk.ac.ed.inf.ilp.data.Restaurant;
+import uk.ac.ed.inf.ilp.data.*;
+import uk.ac.ed.inf.ilp.constant.*;
+import uk.ac.ed.inf.OutputClasses.*;
+import uk.ac.ed.inf.Flight.*;
+import uk.ac.ed.inf.IO.*;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -32,8 +24,8 @@ public class App {
      * @param args Only 2 arguments url and date are accepted.
      */
     public static void main(String[] args) {
-        OrderValidator validator = new OrderValidator();
         FlightDataHandler flightDataHandler = new FlightDataHandler();
+        OrderValidator validator = new OrderValidator();
         RetrieveRestData retrieve_data = new RetrieveRestData();
 
         // Check if the correct number of arguments is passed
@@ -117,12 +109,6 @@ public class App {
                 lngLats.addAll(flightDataHandler.convertAngleToList(angles, appletonTower));
             }
 
-        }
-
-        // If no valid paths are found, maybe due to an error with input data etc., stop from overwriting to file.
-        if (flightPaths.isEmpty() || lngLats.isEmpty()) {
-            System.err.println("Main: No valid orders found, exiting...");
-            System.exit(1);
         }
 
         // Output flight path to file
