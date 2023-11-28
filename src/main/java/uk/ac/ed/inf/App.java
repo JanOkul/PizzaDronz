@@ -119,6 +119,12 @@ public class App {
 
         }
 
+        // If no valid paths are found, maybe due to an error with input data etc., stop from overwriting to file.
+        if (flightPaths.isEmpty() || lngLats.isEmpty()) {
+            System.err.println("Main: No valid orders found, exiting...");
+            System.exit(1);
+        }
+
         // Output flight path to file
         // Create GeoJson
         Geometry geometry = new Geometry();
