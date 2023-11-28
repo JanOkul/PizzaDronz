@@ -98,8 +98,13 @@ public class App {
 
             // Only get flight path of valid orders
             if (order_status_valid && order_code_valid) {
-                angles = flightDataHandler.calculateAngles(order, restaurants, noFlyZones, centralArea, appletonTower);
-
+                try {
+                    angles = flightDataHandler.calculateAngles(order, restaurants, noFlyZones, centralArea, appletonTower);
+                } catch (IllegalArgumentException e) {
+                    System.err.println("Main: Failed to calculate angles for order: " + order.getOrderNo() + ", " +
+                            e.getMessage() + ", skipping order...");
+                    continue;
+                }
                 // If there is an error with finding a path, continue to next order.
                 if (angles == null || angles.isEmpty()) {
                     System.err.println("Main: No path found for order: " + order.getOrderNo() + ", skipping order...");

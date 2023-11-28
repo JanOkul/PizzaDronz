@@ -103,6 +103,7 @@ public class PathGenerator {
         PriorityQueue<Move> openSet = new PriorityQueue<>(Comparator.comparingDouble(Move::getFScore));
         Set<Move> closedSet = new HashSet<>();
 
+        // This also validates start and end through the LngLatHandler method distanceTo.
         double startingHScore = hScore(startPosition, endPosition);
         int maxIterations = 150_000;
         int noIterations = 0;

@@ -31,6 +31,24 @@ public class LngLatHandler implements LngLatHandling {
         lat1 = startPosition.lat();
         lat2 = endPosition.lat();
 
+        // Checks if all the positions are valid
+        if (Math.abs(lng1) > 180) {
+            throw new IllegalArgumentException("LngLatHandler - nextPosition: Position - " + lng1 + " in position ("
+                    + lat1 + ", " + lng1 + ")  (lat, lng) is invalid");
+        }
+        if (Math.abs(lng2) > 180) {
+            throw new IllegalArgumentException("LngLatHandler - nextPosition: Position - " + lng2 + " in position ("
+                    + lat2 + ", " + lng2 + ")  (lat, lng) is invalid");
+        }
+        if (Math.abs(lat1) > 90) {
+            throw new IllegalArgumentException("LngLatHandler - nextPosition: Position - " + lat1 + " in position ("
+                    + lat1 + ", " + lng1 + ")  (lat, lng) is invalid");
+        }
+        if (Math.abs(lat2) > 90) {
+            throw new IllegalArgumentException("LngLatHandler - nextPosition: Position - " + lat2 + " in position ("
+                    + lat2 + ", " + lng2 + ")  (lat, lng) is invalid");
+        }
+
         // Distance Formula
         distance = Math.sqrt(Math.pow(lng2 - lng1, 2) + Math.pow(lat2 - lat1, 2));
         /*
@@ -107,6 +125,16 @@ public class LngLatHandler implements LngLatHandling {
         lng1 = startPosition.lng();
         lat1 = startPosition.lat();
         angle = Math.toRadians(angle);  // Java sin and cos only take radians.
+
+        // Checks if all the positions are valid.
+        if (Math.abs(lng1) > 180) {
+            throw new IllegalArgumentException("LngLatHandler - nextPosition: Position - " + lng1 + " in position ("
+                    + lat1 + ", " + lng1 + ")  (lat, lng) is invalid");
+        }
+        if (Math.abs(lat1) > 90) {
+            throw new IllegalArgumentException("LngLatHandler - nextPosition: Position - " + lat1 +  "in position ("
+                    + lat1 + ", " + lng1 + "), (lat, lng) is invalid");
+        }
 
         // Calculates new x and y positions.
         lng2 = lng1 + (SystemConstants.DRONE_MOVE_DISTANCE * Math.cos(angle));
