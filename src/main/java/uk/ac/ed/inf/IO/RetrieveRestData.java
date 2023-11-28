@@ -1,11 +1,11 @@
 package uk.ac.ed.inf.IO;
 
 
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import uk.ac.ed.inf.ilp.data.NamedRegion;
+import uk.ac.ed.inf.ilp.data.Order;
+import uk.ac.ed.inf.ilp.data.Restaurant;
 
 import java.io.IOException;
 import java.net.URL;
@@ -19,36 +19,71 @@ public class RetrieveRestData {
     }
 
     /**
-     * Retrieves Order/Restaurant/NoFlyZone data from the REST API.
+     * Retrieves Order data from the REST API.
      *
      * @param apiUrl    Rest API URL.
-     * @param urlPath   The url path to the website for different data types.
-     * @param dataClass The class that the data retrieved should be mapped to.
-     * @param <T>       Generic type as the procedure for getting data is the same for Order/Restaurant/NoFlyZone.
-     * @return An array of REST API data.
+     * @return An array of the orders for a given day.
      */
-    public <T> T[] retrieveData(String apiUrl, String urlPath, Class<T> dataClass) throws IOException {
-        T[] data;
+    public Order[] retrieveOrders(String apiUrl) throws IOException {
+        Order[] orders;
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
-        // Adds a slash to end of domain if it is not there.
-        if (!apiUrl.endsWith("/")) {
-            apiUrl += "/";
-        }
-
-        // Tries to retrieve data from REST API.
+        // Tries to retrieve orders from REST API.
         try {
-            URL url = new URL(apiUrl + urlPath);
-            JavaType type = TypeFactory.defaultInstance().constructArrayType(dataClass);    // Creates an array type of the data class.
-            data = objectMapper.readValue(url, type);
+            URL url = new URL(apiUrl);
+            orders = objectMapper.readValue(url, Order[].class);
         } catch (Exception e) {
-            throw new IOException("RetrieveRestData: Failed to obtain REST data for: " + dataClass);
+            throw new IOException("RetrieveRestData: Failed to obtain orders" + e);
             }
 
-        return data;
-
+        return orders;
     }
+
+    /**
+     * Retrieves Restaurant data from the REST API.
+     *
+     * @param apiUrl Rest API URL.
+     * @return An array of all the restaurants.
+     */
+    public Restaurant[] retrieveRestaurants(String apiUrl) throws IOException {
+        Restaurant[] restaurants;
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+
+        // Tries to retrieve restaurants from REST API.
+        try {
+            URL url = new URL(apiUrl);
+            restaurants = objectMapper.readValue(url, Restaurant[].class);
+        } catch (Exception e) {
+            throw new IOException("RetrieveRestData: Failed to obtain restaurants" + e);
+        }
+
+        return restaurants;
+    }
+
+    /**
+     * Retrieves NoFlyZone data from the REST API.
+     *
+     * @param apiUrl Rest API URL.
+     * @return An array of the no-fly-zones.
+     */
+    public NamedRegion[] retrieveNoFlyZones(String apiUrl) throws IOException {
+        NamedRegion[] noFlyZones;
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+
+        // Tries to retrieve noFlyZones from REST API.
+        try {
+            URL url = new URL(apiUrl);
+            noFlyZones = objectMapper.readValue(url, NamedRegion[].class);
+        } catch (Exception e) {
+            throw new IOException("RetrieveRestData: Failed to obtain no-fly-zones" + e);
+        }
+
+        return noFlyZones;
+    }
+
 
     /**
      * Retrieves the central area.
@@ -56,23 +91,19 @@ public class RetrieveRestData {
      * @param apiUrl The URL of the Rest API.
      * @return The central area.
      */
-    public NamedRegion retrieveCentralArea(String apiUrl, String extension) throws IOException {
+    public NamedRegion retrieveCentralArea(String apiUrl) throws IOException {
         NamedRegion centralArea;
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
-        // Adds a slash to end of domain if it is not there.
-        if (!apiUrl.endsWith("/")) {
-            apiUrl += "/";
-        }
 
         // Tries to receive no-fly zones from REST API.
         try {
-            URL url = new URL(apiUrl + extension);
+            URL url = new URL(apiUrl);
             centralArea = objectMapper.readValue(url, NamedRegion.class);
         } catch (Exception e) {
-            throw new IOException("RetrieveRestData: Failed to obtain REST data for: " + NamedRegion.class);
+            throw new IOException("RetrieveRestData: Failed to obtain REST data for central area" + e);
 
         }
 

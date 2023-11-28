@@ -18,6 +18,18 @@ public class OutputToFile {
     }
 
     /**
+     * Checks if a directory exists, if not it creates one.
+     */
+    private boolean checkDirectoryExists() {
+        File directory = new File("resultFiles");
+        boolean createdDirectory = true;
+        if (!directory.exists()){
+            createdDirectory = directory.mkdir(); // Create the directory if it doesn't exist
+        }
+        return !createdDirectory;
+    }
+
+    /**
      * Creates a JSON file of the drones orders that were either delivered, or failed to be delivered.
      *
      * @param orders An ar array of the orders that were processed.
@@ -27,6 +39,11 @@ public class OutputToFile {
         ObjectMapper mapper = new ObjectMapper();
         Delivery[] deliveries = new Delivery[orders.length];
 
+        // Checks if the directory exists, if not it creates one, if it fails to do so, throw an exception.
+        if(checkDirectoryExists()) {
+            throw new IOException("OutputToFile - outputDeliveries: Failed to create directory");
+        }
+
         // Converts each Order to a Delivery.
         for (int i = 0; i < orders.length; i++) {
             Delivery delivery = new Delivery(orders[i]);
@@ -35,9 +52,9 @@ public class OutputToFile {
 
         // Tries to write deliveries to a JSON file.
         try {
-            mapper.writeValue(new File("deliveries-" + date.toString() + ".json"), deliveries);
+            mapper.writeValue(new File("resultFiles\\deliveries-" + date.toString() + ".json"), deliveries);
         } catch (Exception e) {
-            throw new IOException("OutputToFile - outputDeliveries: Failed to write deliveries to file: ");
+            throw new IOException("OutputToFile - outputDeliveries: Failed to write deliveries to file:" + e);
         }
     }
 
@@ -50,11 +67,16 @@ public class OutputToFile {
     public void outputFlightPaths(ArrayList<FlightPath> flightPaths, LocalDate date) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
 
+        // Checks if the directory exists, if not it creates one, if it fails to do so, throw an exception.
+        if(checkDirectoryExists()) {
+            throw new IOException("OutputToFile - outputDeliveries: Failed to create directory");
+        }
+
         // Tries to write flight paths to a JSON file.
         try {
-            mapper.writeValue(new File("flightpath-" + date.toString() + ".json"), flightPaths);
+            mapper.writeValue(new File("resultFiles\\flightpath-" + date.toString() + ".json"), flightPaths);
         } catch (Exception e) {
-            throw new IOException("OutputToFile - outputFlightPaths: Failed to write flight paths to file: ");
+            throw new IOException("OutputToFile - outputFlightPaths: Failed to write flight paths to file: " + e);
         }
     }
 
@@ -67,9 +89,14 @@ public class OutputToFile {
     public void outputGeoJson(FeatureCollection featureCollection, LocalDate date) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
 
+        // Checks if the directory exists, if not it creates one, if it fails to do so, throw an exception.
+        if(checkDirectoryExists()) {
+            throw new IOException("OutputToFile - outputDeliveries: Failed to create directory");
+        }
+
         // Tries to write Feature Collection to a GEO JSON.
         try {
-            mapper.writeValue(new File("drone-" + date.toString() + ".geojson"), featureCollection);
+            mapper.writeValue(new File("resultFiles\\drone-" + date.toString() + ".geojson"), featureCollection);
         } catch (Exception e) {
             throw new IOException("OutputToFile - outputGeoJson: Failed to write flight paths to file: " + e);
         }

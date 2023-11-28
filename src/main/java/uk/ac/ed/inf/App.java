@@ -43,7 +43,7 @@ public class App {
                 argsAsString.append(arg).append(" ");
             }
             System.err.println("Expected 2 arguments: API URL, Date (YYYY-MM-DD), received " + args.length
-                    + " arguments: " + argsAsString + "\nexiting...");
+                    + " arguments: " + argsAsString + ", exiting...");
             System.exit(1);
         }
 
@@ -53,8 +53,12 @@ public class App {
         try {
             date = LocalDate.parse(args[1]);
         } catch (DateTimeParseException e) {
-            System.err.println("Date is not in the correct format, needs to be \"YYYY-MM-DD\". " + "\nexiting...");
+            System.err.println("Date is not in the correct format, needs to be \"YYYY-MM-DD\": " + e + ", exiting...");
             System.exit(1);
+        }
+
+        if (!apiUrl.endsWith("/")) {
+            apiUrl += "/";
         }
 
         // Retrieve data from REST API
@@ -64,12 +68,12 @@ public class App {
         NamedRegion centralArea;
 
         try {
-            orders = retrieve_data.retrieveData(apiUrl, "orders/" + date, Order.class);
-            restaurants = retrieve_data.retrieveData(apiUrl, "restaurants", Restaurant.class);
-            noFlyZones = retrieve_data.retrieveData(apiUrl, "noFlyZones", NamedRegion.class);
-            centralArea = retrieve_data.retrieveCentralArea(apiUrl, "centralArea");
+            orders = retrieve_data.retrieveOrders(apiUrl + "orders/" + date.toString());
+            restaurants = retrieve_data.retrieveRestaurants(apiUrl + "restaurants");
+            noFlyZones = retrieve_data.retrieveNoFlyZones(apiUrl + "noFlyZones");
+            centralArea = retrieve_data.retrieveCentralArea(apiUrl + "centralArea");
         } catch (IOException e) {
-            System.err.println("Failed to retrieve data from REST API, " + e + " exiting...");
+            System.err.println("Main: Failed to retrieve data from REST API, " + e + ", exiting...");
             System.exit(1);
             return;
         }
@@ -97,7 +101,7 @@ public class App {
 
                 // If there is an error with finding a path, continue to next order.
                 if (angles == null || angles.isEmpty()) {
-                    System.err.println("Main: No path found for order: " + order.getOrderNo() + "\nskipping order...");
+                    System.err.println("Main: No path found for order: " + order.getOrderNo() + ", skipping order...");
                     continue;
                 }
                 order.setOrderStatus(OrderStatus.DELIVERED);
@@ -133,7 +137,7 @@ public class App {
             output.outputFlightPaths(flightPaths, date);
             output.outputGeoJson(featureCollection, date);
         } catch (IOException e) {
-            System.err.println("Main: Failed to output deliveries or flight paths, " + e + " exiting...");
+            System.err.println("Main: Failed to output deliveries or flight paths, " + e + ", exiting...");
             System.exit(1);
         }
     }
