@@ -60,7 +60,7 @@ public class App {
         NamedRegion centralArea;
 
         try {
-            orders = retrieve_data.retrieveOrders(apiUrl + "orders/" + date.toString());
+            orders = retrieve_data.retrieveOrders(apiUrl + "orders/" + date);
             restaurants = retrieve_data.retrieveRestaurants(apiUrl + "restaurants");
             noFlyZones = retrieve_data.retrieveNoFlyZones(apiUrl + "noFlyZones");
             centralArea = retrieve_data.retrieveCentralArea(apiUrl + "centralArea");

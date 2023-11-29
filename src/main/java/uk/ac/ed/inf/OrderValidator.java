@@ -40,8 +40,10 @@ public class OrderValidator implements OrderValidation {
             throw new NullPointerException("OrderValidator - validateOrder: Defined restaurants are null");    // Handled in main class.
         }
 
+
         // -------------------- PIZZA CHECKS --------------------
         Pizza[] orderedPizzas = orderToValidate.getPizzasInOrder();
+
         // ---------- Checks if too many pizzas have been sent ----------
         if (orderedPizzas.length > 4) {
             orderToValidate.setOrderStatus(OrderStatus.INVALID);
@@ -58,24 +60,15 @@ public class OrderValidator implements OrderValidation {
 
         // ---------- Checks for undefined pizzas -----------
         boolean invalidPizza = false;
+        ArrayList<Pizza> allPizzas = new ArrayList<>();
 
         // Checks if the pizzas ordered are on the menu of any restaurant
-        for (Pizza pizza : orderedPizzas) {
-            // Checks if any pizza is null
-            if (pizza == null) {
-                invalidPizza = true;
-                break;
-            }
+        for (Restaurant restaurant : definedRestaurants) {
+            Collections.addAll(allPizzas, restaurant.menu());
+        }
 
-            // Checks if pizzas are in any menu.
-            boolean isPizzaInAnyMenu = false;
-            for (Restaurant restaurant : definedRestaurants) {
-                if (Arrays.asList(restaurant.menu()).contains(pizza)) {
-                    isPizzaInAnyMenu = true;
-                    break;
-                }
-            }
-            if (!isPizzaInAnyMenu) {
+        for (Pizza pizza : orderedPizzas) {
+            if (!allPizzas.contains(pizza)) {
                 invalidPizza = true;
                 break;
             }
@@ -101,22 +94,9 @@ public class OrderValidator implements OrderValidation {
         }
 
         // ---------- Checks if restaurant is open and if ordered from one restaurant ----------
-
-        // Holds the restaurant that the pizzas are ordered from.
         Set<Restaurant> pizzaOriginRestaurant = new HashSet<>();
-
         for (Restaurant restaurant : definedRestaurants) {
             for (Pizza pizza : orderedPizzas) {
-                // Checks if pizza is on the menu of the restaurant.
-                if (asList(restaurant.menu()).contains(pizza)) {
-                    // Checks if restaurant is open at time of order.
-                    if (!asList(restaurant.openingDays()).contains(LocalDate.now().getDayOfWeek())) {
-                        orderToValidate.setOrderStatus(OrderStatus.INVALID);
-                        orderToValidate.setOrderValidationCode(OrderValidationCode.RESTAURANT_CLOSED);
-                        return orderToValidate;
-                    }
-                }
-
                 //  Checks that all pizzas are from the same restaurant.
                 // Converted menu to an arrayList so can use the contains method.
                 if (asList(restaurant.menu()).contains(pizza)) {
@@ -125,6 +105,20 @@ public class OrderValidator implements OrderValidation {
                     if (pizzaOriginRestaurant.size() > 1) {
                         orderToValidate.setOrderStatus(OrderStatus.INVALID);
                         orderToValidate.setOrderValidationCode(OrderValidationCode.PIZZA_FROM_MULTIPLE_RESTAURANTS);
+                        return orderToValidate;
+                    }
+                }
+            }
+        }
+
+        for (Restaurant restaurant : definedRestaurants) {
+            for (Pizza pizza : orderedPizzas) {
+                // Checks if pizza is on the menu of the restaurant.
+                if (asList(restaurant.menu()).contains(pizza)) {
+                    // Checks if restaurant is open at time of order.
+                    if (!asList(restaurant.openingDays()).contains(orderToValidate.getOrderDate().getDayOfWeek())) {
+                        orderToValidate.setOrderStatus(OrderStatus.INVALID);
+                        orderToValidate.setOrderValidationCode(OrderValidationCode.RESTAURANT_CLOSED);
                         return orderToValidate;
                     }
                 }
@@ -204,6 +198,7 @@ public class OrderValidator implements OrderValidation {
             orderToValidate.setOrderValidationCode(OrderValidationCode.EXPIRY_DATE_INVALID);
             return orderToValidate;
         }
+
 
         // ---------- Sets order to valid as all check have been passed -----------
         orderToValidate.setOrderStatus(OrderStatus.VALID_BUT_NOT_DELIVERED);

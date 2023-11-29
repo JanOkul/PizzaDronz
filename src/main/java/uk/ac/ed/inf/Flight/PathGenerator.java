@@ -12,7 +12,6 @@ import java.util.*;
 class Move {
     private final LngLat position;
     private final Move cameFrom;
-    private final double gScore;
     private final double hScore;
     private final double angle;     // The angle from the previous position to this position.
 
@@ -22,14 +21,12 @@ class Move {
      *
      * @param position The position of this move.
      * @param cameFrom The previous move in the path.
-     * @param gScore   The cost from the start node to this node.
      * @param hScore   The heuristic cost estimate from this node to the end node.
      * @param angle    The angle from the previous position to this position.
      */
-    Move(LngLat position, Move cameFrom, double gScore, double hScore, double angle) {
+    Move(LngLat position, Move cameFrom, double hScore, double angle) {
         this.position = position;
         this.cameFrom = cameFrom;
-        this.gScore = gScore;
         this.hScore = hScore;
         this.angle = angle;
     }
@@ -58,8 +55,8 @@ class Move {
      *
      * @return A double F-Score.
      */
-    double getFScore() {
-        return this.gScore + this.hScore;
+    double getScore() {
+        return this.hScore;
     }
 
     /**
@@ -91,7 +88,8 @@ public class PathGenerator {
     /**
      * Calculates a flight path from a start position to an end position using
      * the A* pathfinding algorithm. The path avoids no-fly zones and considers
-     * the central region restrictions.
+     * the central region restrictions. The G score has also been dropped as
+     * all moves have the same cost of 1.5e-4.
      *
      * @param startPosition The starting position of the drone.
      * @param endPosition   The target position to reach.
@@ -100,7 +98,7 @@ public class PathGenerator {
      * @return A list of angles representing the drone's path, or null if no valid path is found.
      */
     protected ArrayList<Double> createFlightAngles(LngLat startPosition, LngLat endPosition, NamedRegion[] noFlyZones, NamedRegion centralRegion) {
-        PriorityQueue<Move> openSet = new PriorityQueue<>(Comparator.comparingDouble(Move::getFScore));
+        PriorityQueue<Move> openSet = new PriorityQueue<>(Comparator.comparingDouble(Move::getScore));
         Set<Move> closedSet = new HashSet<>();
 
         // This also validates start and end through the LngLatHandler method distanceTo.
@@ -108,7 +106,7 @@ public class PathGenerator {
         int maxIterations = 150_000;
         int noIterations = 0;
 
-        Move start = new Move(startPosition, null, 0, startingHScore, 0);
+        Move start = new Move(startPosition, null, startingHScore, 0);
         leftCentralRegion = false;
 
         openSet.add(start);
@@ -155,19 +153,9 @@ public class PathGenerator {
      * @return The heuristic score based on the distance.
      */
     private double hScore(LngLat position, LngLat endPosition) {
-            return lngLatHandler.distanceTo(position, endPosition);
+        return lngLatHandler.distanceTo(position, endPosition);
     }
 
-    /**
-     * Calculates the actual score from the current position to the next position.
-     *
-     * @param position     The current position.
-     * @param nextPosition The next position.
-     * @return The actual score based on the distance between the positions.
-     */
-    private double gScore(LngLat position, LngLat nextPosition) {
-            return lngLatHandler.distanceTo(position, nextPosition);
-    }
 
     /**
      * Generates neighboring moves from the current position, considering the possible directions,
@@ -193,10 +181,9 @@ public class PathGenerator {
                 continue;
             }
 
-            double gScore = gScore(currentPosition, potentialNextPosition);
             double hScore = hScore(potentialNextPosition, endPosition);
 
-            neighbours.add(new Move(potentialNextPosition, position, gScore, hScore, direction));
+            neighbours.add(new Move(potentialNextPosition, position, hScore, direction));
         }
         return neighbours;
     }
