@@ -41,7 +41,7 @@ public class AppTest
         String date = LocalDate.now().toString();
 
         try {
-            App.main(new String[]{url, date});
+            App.main(new String[]{date, url});
         } catch (Exception e) {
             fail("App failed to run normally");
         }

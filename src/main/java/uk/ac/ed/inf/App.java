@@ -40,10 +40,10 @@ public class App {
         }
 
         // Define arguments
-        String apiUrl = args[0];
+        String apiUrl = args[1];
         LocalDate date = null;
         try {
-            date = LocalDate.parse(args[1]);
+            date = LocalDate.parse(args[0]);
         } catch (DateTimeParseException e) {
             System.err.println("Date is not in the correct format, needs to be \"YYYY-MM-DD\": " + e + ", exiting...");
             System.exit(1);
