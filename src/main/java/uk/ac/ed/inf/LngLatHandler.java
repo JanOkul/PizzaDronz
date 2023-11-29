@@ -33,19 +33,19 @@ public class LngLatHandler implements LngLatHandling {
 
         // Checks if all the positions are valid
         if (Math.abs(lng1) > 180) {
-            throw new IllegalArgumentException("LngLatHandler - nextPosition: Position - " + lng1 + " in position ("
+            throw new IllegalStateException("LngLatHandler - nextPosition: Position - " + lng1 + " in position ("
                     + lat1 + ", " + lng1 + ")  (lat, lng) is invalid");
         }
         if (Math.abs(lng2) > 180) {
-            throw new IllegalArgumentException("LngLatHandler - nextPosition: Position - " + lng2 + " in position ("
+            throw new IllegalStateException("LngLatHandler - nextPosition: Position - " + lng2 + " in position ("
                     + lat2 + ", " + lng2 + ")  (lat, lng) is invalid");
         }
         if (Math.abs(lat1) > 90) {
-            throw new IllegalArgumentException("LngLatHandler - nextPosition: Position - " + lat1 + " in position ("
+            throw new IllegalStateException("LngLatHandler - nextPosition: Position - " + lat1 + " in position ("
                     + lat1 + ", " + lng1 + ")  (lat, lng) is invalid");
         }
         if (Math.abs(lat2) > 90) {
-            throw new IllegalArgumentException("LngLatHandler - nextPosition: Position - " + lat2 + " in position ("
+            throw new IllegalStateException("LngLatHandler - nextPosition: Position - " + lat2 + " in position ("
                     + lat2 + ", " + lng2 + ")  (lat, lng) is invalid");
         }
 
@@ -128,11 +128,11 @@ public class LngLatHandler implements LngLatHandling {
 
         // Checks if all the positions are valid.
         if (Math.abs(lng1) > 180) {
-            throw new IllegalArgumentException("LngLatHandler - nextPosition: Position - " + lng1 + " in position ("
+            throw new IllegalStateException("LngLatHandler - nextPosition: Position - " + lng1 + " in position ("
                     + lat1 + ", " + lng1 + ")  (lat, lng) is invalid");
         }
         if (Math.abs(lat1) > 90) {
-            throw new IllegalArgumentException("LngLatHandler - nextPosition: Position - " + lat1 +  "in position ("
+            throw new IllegalStateException("LngLatHandler - nextPosition: Position - " + lat1 +  "in position ("
                     + lat1 + ", " + lng1 + "), (lat, lng) is invalid");
         }
 

@@ -34,7 +34,7 @@ public class App {
             for (String arg : args) {
                 argsAsString.append(arg).append(" ");
             }
-            System.err.println("Expected 2 arguments: API URL, Date (YYYY-MM-DD), received " + args.length
+            System.err.println("Expected 2 arguments: [API URL, Date], received " + args.length
                     + " arguments: " + argsAsString + ", exiting...");
             System.exit(1);
         }
@@ -65,7 +65,7 @@ public class App {
             noFlyZones = retrieve_data.retrieveNoFlyZones(apiUrl + "noFlyZones");
             centralArea = retrieve_data.retrieveCentralArea(apiUrl + "centralArea");
         } catch (IOException e) {
-            System.err.println("Main: Failed to retrieve data from REST API, " + e + ", exiting...");
+            System.err.println("Main: Failed to retrieve data from REST API: " + e + ", exiting...");
             System.exit(1);
             return;
         }
@@ -81,7 +81,7 @@ public class App {
             try {
                 validator.validateOrder(order, restaurants);
             } catch (NullPointerException e) {
-                System.err.println("Main: Order or restaurants are null, skipping order...");
+                System.err.println("Main: Failed to validate order:" + e.getMessage());
                 continue;
             }
 
@@ -92,13 +92,17 @@ public class App {
             if (order_status_valid && order_code_valid) {
                 try {
                     angles = flightDataHandler.calculateAngles(order, restaurants, noFlyZones, centralArea, appletonTower);
-                } catch (IllegalArgumentException e) {
-                    System.err.println("Main: Failed to calculate angles for order: " + order.getOrderNo() + ", " +
+                } catch (IllegalStateException e) {
+                    order.setOrderStatus(OrderStatus.INVALID);
+                    order.setOrderValidationCode(OrderValidationCode.UNDEFINED);
+                    System.err.println("Main: Failed to calculate angles for order " + order.getOrderNo() + ": " +
                             e.getMessage() + ", skipping order...");
                     continue;
                 }
                 // If there is an error with finding a path, continue to next order.
                 if (angles == null || angles.isEmpty()) {
+                    order.setOrderStatus(OrderStatus.INVALID);
+                    order.setOrderValidationCode(OrderValidationCode.UNDEFINED);
                     System.err.println("Main: No path found for order: " + order.getOrderNo() + ", skipping order...");
                     continue;
                 }
@@ -135,7 +139,7 @@ public class App {
             output.outputFlightPaths(flightPaths, date);
             output.outputGeoJson(featureCollection, date);
         } catch (IOException e) {
-            System.err.println("Main: Failed to output deliveries or flight paths, " + e + ", exiting...");
+            System.err.println("Main: Failed to output deliveries or flight paths: " + e.getMessage() + ", exiting...");
             System.exit(1);
         }
     }
