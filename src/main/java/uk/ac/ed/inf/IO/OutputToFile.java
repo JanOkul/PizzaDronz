@@ -40,7 +40,7 @@ public class OutputToFile {
         Delivery[] deliveries = new Delivery[orders.length];
 
         // Checks if the directory exists, if not it creates one, if it fails to do so, throw an exception.
-        if(checkDirectoryExists()) {
+        if (checkDirectoryExists()) {
             throw new IOException("OutputToFile - outputDeliveries: Failed to create directory");
         }
 

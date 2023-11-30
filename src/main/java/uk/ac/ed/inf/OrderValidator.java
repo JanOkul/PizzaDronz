@@ -172,6 +172,13 @@ public class OrderValidator implements OrderValidation {
 
         // ---------- Checks if card is not expired ----------
         String[] expiryDateString = creditCardInfo.getCreditCardExpiry().split("/");
+
+        if (expiryDateString.length != 2) {
+            orderToValidate.setOrderStatus(OrderStatus.INVALID);
+            orderToValidate.setOrderValidationCode(OrderValidationCode.EXPIRY_DATE_INVALID);
+            return orderToValidate;
+        }
+
         LocalDate expiryDate;
         int expiryMonth, expiryYear;
         try {
@@ -193,7 +200,7 @@ public class OrderValidator implements OrderValidation {
         }
 
         // Checks if card expiry date is before the current date (expired).
-        if (expiryDate.isBefore(LocalDate.now())) {
+        if (expiryDate.isBefore(orderToValidate.getOrderDate())) {
             orderToValidate.setOrderStatus(OrderStatus.INVALID);
             orderToValidate.setOrderValidationCode(OrderValidationCode.EXPIRY_DATE_INVALID);
             return orderToValidate;

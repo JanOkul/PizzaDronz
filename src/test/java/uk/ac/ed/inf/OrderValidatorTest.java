@@ -274,7 +274,7 @@ public class OrderValidatorTest extends TestCase {
     /**
      * Tests a CCV with a character.
      */
-    public void testCCVwith1IllegalDigit() {
+    public void testCCVWith1IllegalDigit() {
         OrderValidator validator = new OrderValidator();
 
         CreditCardInformation cc = new CreditCardInformation(sampleCCNo, sampleCCExpiry, "A");
