@@ -70,7 +70,7 @@ class Move {
 }
 
 /**
- * Creates a flight path from a start position to an end position, avoiding no-fly zones
+ * Creates a flight path from a execute position to an end position, avoiding no-fly zones
  * and ensures that it doesn't leave the central region, if it has re-entered it.
  */
 public class PathGenerator {
@@ -86,7 +86,7 @@ public class PathGenerator {
 
 
     /**
-     * Calculates a flight path from a start position to an end position using
+     * Calculates a flight path from a execute position to an end position using
      * the A* pathfinding algorithm. The path avoids no-fly zones and considers
      * the central region restrictions. The G score has also been dropped as
      * all moves have the same cost of 1.5e-4.
@@ -101,7 +101,7 @@ public class PathGenerator {
         PriorityQueue<Move> openSet = new PriorityQueue<>(Comparator.comparingDouble(Move::getScore));
         Set<Move> closedSet = new HashSet<>();
 
-        // This also validates start and end through the LngLatHandler method distanceTo.
+        // This also validates execute and end through the LngLatHandler method distanceTo.
         double startingHScore = hScore(startPosition, endPosition);
         int maxIterations = 150_000;
         int noIterations = 0;
@@ -220,7 +220,7 @@ public class PathGenerator {
      * Creates the angle path by recursively going up the Move came from variable until it hits
      * the null at the starting move.
      *
-     * @param current The end position move from which to start reconstructing the path.
+     * @param current The end position move from which to execute reconstructing the path.
      * @return A list of angles representing the reconstructed path.
      */
     private ArrayList<Double> reconstructPath(Move current) {

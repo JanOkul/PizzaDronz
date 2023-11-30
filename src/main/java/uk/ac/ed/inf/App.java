@@ -18,12 +18,16 @@ import java.util.ArrayList;
  * The program will validate, then calculate the flight path for each order, and finally will output data to files.
  */
 public class App {
+
+    public App() {
+    }
+
     /**
      * The main loop of the Drone.
      *
      * @param args Only 2 arguments url and date are accepted.
      */
-    public static void main(String[] args) {
+    public void execute(String[] args) {
         FlightDataHandler flightDataHandler = new FlightDataHandler();
         OrderValidator validator = new OrderValidator();
         RetrieveRestData retrieve_data = new RetrieveRestData();
@@ -142,6 +146,16 @@ public class App {
             System.err.println("Main: Failed to output deliveries or flight paths: " + e.getMessage() + ", exiting...");
             System.exit(1);
         }
+
+    }
+
+    /**
+     * Main method, entry point of the program.
+     * @param args The arguments passed to the program.
+     */
+    public static void main(String[] args) {
+        App app = new App();
+        app.execute(args);
     }
 
 }
